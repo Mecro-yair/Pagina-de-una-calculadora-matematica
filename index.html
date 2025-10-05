@@ -32,10 +32,7 @@
         header::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
             animation: shine 3s infinite;
         }
@@ -68,7 +65,6 @@
             color: white;
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
-            border-color: #a855f7;
         }
         .method-btn.active { 
             background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
@@ -83,12 +79,7 @@
             border: 1px solid rgba(147, 51, 234, 0.2);
         }
         .input-group { margin-bottom: 20px; }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #c4b5fd;
-        }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #c4b5fd; }
         input, textarea {
             width: 100%;
             padding: 12px;
@@ -130,16 +121,10 @@
             border-radius: 10px;
             margin-top: 20px;
             display: none;
-            border-left: 5px solid #7c3aed;
             border: 1px solid rgba(147, 51, 234, 0.3);
         }
         .result-section.show { display: block; }
-        .result-title {
-            font-size: 1.3em;
-            font-weight: 600;
-            color: #c4b5fd;
-            margin-bottom: 15px;
-        }
+        .result-title { font-size: 1.3em; font-weight: 600; color: #c4b5fd; margin-bottom: 15px; }
         .result-content {
             background: #1e1e2e;
             padding: 20px;
@@ -150,20 +135,15 @@
             color: #e5e5e5;
             border: 1px solid #3d3d54;
         }
-        .error { 
-            background: #3d1f1f; 
-            border-color: #dc2626;
-        }
+        .error { background: #3d1f1f; border-color: #dc2626; }
         .error .result-title { color: #fca5a5; }
-        .error .result-content { 
-            background: #2d1515;
-            color: #fca5a5;
-            border-color: #7f1d1d;
-        }
+        .error .result-content { background: #2d1515; color: #fca5a5; border-color: #7f1d1d; }
+        .warning { background: #3d2f1f; border-color: #f59e0b; }
+        .warning .result-title { color: #fcd34d; }
+        .warning .result-content { background: #2d2115; color: #fcd34d; border-color: #78350f; }
         .credits-btn {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
+            bottom: 30px; right: 30px;
             padding: 15px 25px;
             background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
             color: white;
@@ -176,17 +156,12 @@
             transition: all 0.3s;
             z-index: 1000;
         }
-        .credits-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6);
-        }
+        .credits-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6); }
         .credits-modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.8);
             z-index: 2000;
             justify-content: center;
@@ -212,8 +187,7 @@
         .credits-header p { color: #9ca3af; font-size: 1.1em; }
         .credits-list { list-style: none; padding: 0; }
         .credits-list li {
-            padding: 15px;
-            margin: 10px 0;
+            padding: 15px; margin: 10px 0;
             background: #2a2a3e;
             border-left: 4px solid #7c3aed;
             border-radius: 8px;
@@ -222,11 +196,7 @@
             color: #e5e5e5;
             transition: all 0.3s;
         }
-        .credits-list li:hover {
-            transform: translateX(5px);
-            box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);
-            background: #323246;
-        }
+        .credits-list li:hover { transform: translateX(5px); box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3); background: #323246; }
         .credits-close {
             display: block;
             margin: 30px auto 0;
@@ -240,10 +210,7 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        .credits-close:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
-        }
+        .credits-close:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
         #plotSection {
             display: none;
             margin-top: 20px;
@@ -252,12 +219,7 @@
             border-radius: 10px;
             border: 1px solid rgba(147, 51, 234, 0.2);
         }
-        #plotSection > div:first-child {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #c4b5fd;
-            margin-bottom: 15px;
-        }
+        #plotSection > div:first-child { font-size: 1.2em; font-weight: 600; color: #c4b5fd; margin-bottom: 15px; }
         #plotCanvas {
             border: 2px solid #3d3d54;
             border-radius: 8px;
@@ -268,33 +230,10 @@
         @media (max-width: 768px) {
             body { padding: 10px; }
             h1 { font-size: 1.8em; }
-            .subtitle { font-size: 0.95em; }
             .content { padding: 20px; }
-            .method-selector {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-                gap: 10px;
-            }
+            .method-selector { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
             .method-btn { padding: 12px; font-size: 0.9em; }
-            .input-section { padding: 15px; }
-            .result-section { padding: 15px; }
-            canvas { width: 100%; height: auto; }
-            input, textarea { font-size: 16px; }
-            .credits-btn {
-                bottom: 20px;
-                right: 20px;
-                padding: 12px 20px;
-                font-size: 0.9em;
-            }
-            .credits-content { padding: 25px; }
-            .credits-header h2 { font-size: 1.5em; }
-            .credits-list li { font-size: 0.95em; padding: 12px; }
-        }
-        @media (max-width: 480px) {
-            h1 { font-size: 1.5em; }
-            .method-selector { grid-template-columns: 1fr; }
-            .method-btn { padding: 10px; font-size: 0.85em; }
-            .content { padding: 15px; }
-            .input-section { padding: 12px; }
+            .credits-btn { bottom: 20px; right: 20px; padding: 12px 20px; }
         }
     </style>
 </head>
@@ -490,7 +429,7 @@
             const rows = [];
             for (let k = 1; k <= maxIt; k++) {
                 const fx0 = f(x0), fx1 = f(x1);
-                if (fx1 === fx0) throw new Error("Denominador cero");
+                if (Math.abs(fx1 - fx0) < 1e-15) throw new Error("Denominador cero");
                 const x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0), fx2 = f(x2);
                 rows.push({ k, x0, x1, x2, fx1, fx2 });
                 if (Math.abs(x2 - x1) < tol || Math.abs(fx2) < tol) break;
@@ -504,10 +443,12 @@
         function formatMatrix(M) { return M.map(r => r.map(x => x.toFixed(4)).join('  ')).join('\n'); }
         function formatVector(v) { return v.map(x => x.toFixed(6)).join('\n'); }
 
-        function showResult(content, isError = false) {
+        function showResult(content, isError = false, isWarning = false) {
             const sec = document.getElementById('resultSection');
             const cont = document.getElementById('resultContent');
-            sec.className = 'result-section show' + (isError ? ' error' : '');
+            sec.className = 'result-section show';
+            if (isError) sec.classList.add('error');
+            if (isWarning) sec.classList.add('warning');
             cont.textContent = content;
             document.getElementById('plotSection').style.display = 'none';
         }
@@ -531,6 +472,17 @@
             try {
                 const A = parseMatrix(document.getElementById('matrixA').value);
                 const B = parseMatrix(document.getElementById('matrixB').value);
+                
+                if (currentMethod === 'suma' && (A.length !== B.length || A[0].length !== B[0].length)) {
+                    showResult('⚠️ ERROR DE DIMENSIONES\n\nPara sumar matrices, ambas deben tener las mismas dimensiones.\n\n💡 SUGERENCIA: Si deseas combinar estas matrices, considera usar "Multiplicación" (las columnas de A deben igualar las filas de B).', true);
+                    return;
+                }
+                
+                if (currentMethod === 'multiplicacion' && A[0].length !== B.length) {
+                    showResult(`⚠️ ERROR DE DIMENSIONES\n\nPara multiplicar A×B, el número de columnas de A (${A[0].length}) debe igualar el número de filas de B (${B.length}).\n\n💡 SUGERENCIA: Verifica las dimensiones o intenta multiplicar B×A si tiene sentido para tu problema.`, true);
+                    return;
+                }
+                
                 const result = currentMethod === 'suma' ? sumaMatrices(A, B) : multiplicacionMatrices(A, B);
                 showResult(`Resultado de A ${currentMethod === 'suma' ? '+' : '×'} B:\n\n${formatMatrix(result)}`);
             } catch (e) { showResult('Error: ' + e.message, true); }
@@ -539,9 +491,20 @@
         function solveMatrixSingle() {
             try {
                 const M = parseMatrix(document.getElementById('matrix').value);
+                
+                if (M.length !== M[0].length) {
+                    showResult(`⚠️ MATRIZ NO CUADRADA\n\nLa matriz es de ${M.length}×${M[0].length}. ${currentMethod === 'determinante' ? 'El determinante' : 'La inversa'} solo se puede calcular para matrices cuadradas (n×n).\n\n💡 SUGERENCIA: Para matrices rectangulares, considera usar la pseudoinversa (no disponible aquí) o reformula tu problema.`, true);
+                    return;
+                }
+                
                 if (currentMethod === 'determinante') {
                     showResult('Determinante: ' + determinante(M).toFixed(6));
                 } else {
+                    const det = determinante(M);
+                    if (Math.abs(det) < 1e-10) {
+                        showResult('⚠️ MATRIZ SINGULAR (NO INVERTIBLE)\n\nEl determinante es prácticamente cero, por lo que esta matriz no tiene inversa.\n\n💡 SUGERENCIA: Si necesitas resolver un sistema lineal Ax=b, usa "Gauss" o "Gauss-Jordan" que pueden identificar si el sistema tiene solución única, infinitas soluciones, o ninguna.', true);
+                        return;
+                    }
                     showResult('Matriz Inversa:\n\n' + formatMatrix(matrizInversa(M)));
                 }
             } catch (e) { showResult('Error: ' + e.message, true); }
@@ -551,6 +514,31 @@
             try {
                 const A = parseMatrix(document.getElementById('matrixA').value);
                 const b = parseVector(document.getElementById('vectorB').value);
+                
+                if (A.length !== b.length) {
+                    showResult(`⚠️ DIMENSIONES INCOMPATIBLES\n\nLa matriz A tiene ${A.length} filas pero el vector b tiene ${b.length} elementos. Deben coincidir.\n\nVerifica tu entrada de datos.`, true);
+                    return;
+                }
+                
+                if (A.length !== A[0].length) {
+                    showResult(`⚠️ SISTEMA RECTANGULAR\n\nLa matriz es ${A.length}×${A[0].length}. Los métodos disponibles requieren matrices cuadradas.\n\n💡 SUGERENCIA: Para sistemas sobredeterminados o subdeterminados, considera usar mínimos cuadrados u otros métodos especializados.`, true);
+                    return;
+                }
+                
+                if (['jacobi', 'gauss-seidel'].includes(currentMethod)) {
+                    let diagonalDominante = true;
+                    for (let i = 0; i < A.length; i++) {
+                        const suma = A[i].reduce((s, v, j) => s + (i !== j ? Math.abs(v) : 0), 0);
+                        if (Math.abs(A[i][i]) <= suma) {
+                            diagonalDominante = false;
+                            break;
+                        }
+                    }
+                    if (!diagonalDominante) {
+                        showResult(`⚠️ MATRIZ NO DIAGONALMENTE DOMINANTE\n\nLos métodos iterativos (Jacobi/Gauss-Seidel) pueden no converger para esta matriz.\n\n💡 SUGERENCIA: Usa "Gauss" o "Gauss-Jordan" que garantizan encontrar la solución exacta en menos iteraciones para sistemas pequeños como este.`, false, true);
+                    }
+                }
+                
                 let result, output;
                 if (currentMethod === 'gauss') {
                     result = gaussElimination(A, b);
@@ -561,9 +549,15 @@
                 } else if (currentMethod === 'jacobi') {
                     result = jacobi(A, b);
                     output = `Solución (Jacobi):\n\n${formatVector(result.x)}\n\nIteraciones: ${result.iterations}`;
+                    if (result.iterations >= 100) {
+                        output += '\n\n⚠️ ADVERTENCIA: Se alcanzó el máximo de iteraciones. Considera usar Gauss-Seidel (converge más rápido) o métodos directos.';
+                    }
                 } else {
                     result = gaussSeidel(A, b);
                     output = `Solución (Gauss-Seidel):\n\n${formatVector(result.x)}\n\nIteraciones: ${result.iterations}`;
+                    if (result.iterations >= 100) {
+                        output += '\n\n⚠️ ADVERTENCIA: Se alcanzó el máximo de iteraciones. Usa "Gauss" o "Gauss-Jordan" para una solución exacta.';
+                    }
                 }
                 showResult(output);
             } catch (e) { showResult('Error: ' + e.message, true); }
@@ -613,19 +607,41 @@
                 let v = [...initial];
                 const tol = 1e-8, maxIter = 100;
                 let finalIter = 0, history = [];
+                
+                let diverging = false;
                 for (let k = 1; k <= maxIter; k++) {
                     finalIter = k;
                     const vNew = g(v);
                     const err = Math.max(...vNew.map((x, i) => Math.abs(x - v[i])));
                     history.push({ iter: k, vNew, err });
+                    
+                    if (vNew.some(x => !isFinite(x))) {
+                        diverging = true;
+                        break;
+                    }
+                    
+                    if (k > 10 && err > history[k - 2].err * 0.95) {
+                        diverging = true;
+                    }
+                    
                     v = vNew;
                     if (err < tol) break;
-                    if (k === maxIter) throw new Error('No convergió');
                 }
+                
+                if (diverging || finalIter >= maxIter) {
+                    showResult('⚠️ MÉTODO DE PUNTO FIJO DIVERGIENDO\n\nLa iteración no converge a una solución. Esto ocurre cuando |g\'(x)| >= 1 cerca de la raíz.\n\n💡 SUGERENCIAS:\n- Reformula las ecuaciones de otra forma (x = g(x))\n- Usa "Ec. No Lineales" (Newton multivariable) que es más robusto\n- Prueba "Newton Modificado" si tienes un buen punto inicial\n- Verifica que el sistema tenga solución real', false, true);
+                    return;
+                }
+                
                 const vars = ['x', 'y', 'z', 'w', 'u'];
                 let output = 'Solución (Punto Fijo):\n\n';
                 v.forEach((val, i) => output += `${vars[i]} = ${val.toFixed(10)}\n`);
                 output += `\nIteraciones: ${finalIter}\nError final: ${history[history.length - 1].err.toExponential(4)}`;
+                
+                if (finalIter > 50) {
+                    output += '\n\n💡 NOTA: Convergencia lenta. Newton o Newton Modificado convergen más rápido.';
+                }
+                
                 showResult(output);
             } catch (e) { showResult('Error: ' + e.message, true); }
         }
@@ -655,7 +671,6 @@
                     const resnorm = Math.sqrt(fv.reduce((s, x) => s + x * x, 0));
                     history.push({ iter: k, err, resnorm });
                     if (err < tol && resnorm < tol) break;
-                    if (k === maxIter) throw new Error('No convergió');
                 }
                 const vars = ['x', 'y', 'z', 'w', 'u'];
                 let output = 'Solución (Newton Modificado):\n\n';
@@ -676,6 +691,24 @@
                     .replace(/\b(raiz|sqrt)\(/g, 'Math.sqrt(').replace(/²/g, '**2').replace(/³/g, '**3');
                 const f = x => eval(funcStr);
                 const [a, b] = parseVector(document.getElementById('interval').value);
+                
+                const fa = f(a), fb = f(b);
+                
+                if (Math.abs(fa) < 1e-6) {
+                    showResult(`✓ El punto inicial a=${a} ya es una raíz aproximada\n\nf(${a}) ≈ ${fa.toExponential(4)}\n\nNo es necesario aplicar el método.`);
+                    return;
+                }
+                
+                if (Math.abs(fb) < 1e-6) {
+                    showResult(`✓ El punto inicial b=${b} ya es una raíz aproximada\n\nf(${b}) ≈ ${fb.toExponential(4)}\n\nNo es necesario aplicar el método.`);
+                    return;
+                }
+                
+                if (currentMethod === 'biseccion' && fa * fb > 0) {
+                    showResult(`⚠️ NO HAY CAMBIO DE SIGNO\n\nf(${a}) = ${fa.toFixed(4)}\nf(${b}) = ${fb.toFixed(4)}\n\nEl método de Bisección requiere que f(a) y f(b) tengan signos opuestos.\n\n💡 SUGERENCIAS:\n- Prueba otro intervalo donde la función cambie de signo\n- Usa "Secante" si tienes dos puntos cercanos a la raíz\n- Grafica la función para visualizar dónde cruza el eje x`, false, true);
+                    return;
+                }
+                
                 let rows, output;
                 if (currentMethod === 'biseccion') {
                     rows = bisection(f, a, b);
@@ -688,9 +721,19 @@
                     output = 'Método de la Secante:\n\nIter\tx0\t\tx1\t\tx2\t\tf(x2)\n';
                     rows.forEach(r => output += `${r.k}\t${r.x0.toFixed(6)}\t${r.x1.toFixed(6)}\t${r.x2.toFixed(6)}\t${r.fx2.toFixed(8)}\n`);
                     output += `\nRaíz aproximada: ${rows[rows.length - 1].x2.toFixed(10)}\nIteraciones: ${rows.length}`;
+                    
+                    if (rows.length >= 50) {
+                        output += '\n\n💡 NOTA: Convergencia lenta. Si tienes el intervalo con cambio de signo, Bisección puede ser más confiable.';
+                    }
                 }
                 showResult(output);
-            } catch (e) { showResult('Error: ' + e.message, true); }
+            } catch (e) { 
+                if (e.message === "Denominador cero") {
+                    showResult('⚠️ DIVISIÓN POR CERO EN SECANTE\n\nLos valores f(x₀) y f(x₁) son iguales, causando división por cero.\n\n💡 SUGERENCIAS:\n- Elige puntos iniciales más separados\n- Usa "Bisección" si conoces un intervalo con cambio de signo\n- Verifica que la función no sea constante en ese rango', false, true);
+                } else {
+                    showResult('Error: ' + e.message, true);
+                }
+            }
         }
 
         function plotSystem(eqs, sol) {
