@@ -7,13 +7,17 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Contenedor principal -->
     <div class="container">
+        <!-- Encabezado -->
         <header>
             <h1>Trabajo de Modelado Computacional para Ingeniería</h1>
             <p class="subtitle">Algoritmos Vistos en Clase</p>
         </header>
 
+        <!-- Contenido principal -->
         <div class="content">
+            <!-- Selector de métodos -->
             <div class="method-selector">
                 <button class="method-btn" data-method="suma">Suma Matrices</button>
                 <button class="method-btn" data-method="multiplicacion">Multiplicación</button>
@@ -30,13 +34,16 @@
                 <button class="method-btn" data-method="secante">Secante</button>
             </div>
 
+            <!-- Sección de entrada (se llena dinámicamente) -->
             <div class="input-section" id="inputSection"></div>
 
+            <!-- Sección de resultados -->
             <div class="result-section" id="resultSection">
                 <div class="result-title">Resultado:</div>
                 <div class="result-content" id="resultContent"></div>
             </div>
 
+            <!-- Sección de gráfica -->
             <div id="plotSection">
                 <div>Gráfica del Sistema (2 variables)</div>
                 <div style="display: flex; justify-content: center;">
@@ -49,8 +56,10 @@
         </div>
     </div>
 
-    <button class="credits-btn" onclick="toggleCredits()">Créditos</button>
+    <!-- Botón de créditos -->
+    <button class="credits-btn" onclick="mostrarOcultarCreditos()">Créditos</button>
 
+    <!-- Modal de créditos -->
     <div class="credits-modal" id="creditsModal">
         <div class="credits-content">
             <div class="credits-header">
@@ -64,7 +73,7 @@
                 <li>YHULIAN NAYELI MAQUERA FLORES</li>
                 <li>ALEXANDRA VALERIA CHOQUE ONOFRE</li>
             </ul>
-            <button class="credits-close" onclick="toggleCredits()">Cerrar</button>
+            <button class="credits-close" onclick="mostrarOcultarCreditos()">Cerrar</button>
         </div>
     </div>
 
