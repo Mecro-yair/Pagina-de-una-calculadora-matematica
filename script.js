@@ -1,457 +1,779 @@
-let currentMethod = null;
+// ========================================
+// VARIABLES GLOBALES
+// ========================================
+let metodoActual = null;
 
-function toggleCredits() {
-    document.getElementById('creditsModal').classList.toggle('show');
+// ========================================
+// FUNCIONES DE INTERFAZ
+// ========================================
+
+function mostrarOcultarCreditos() {
+    const modal = document.getElementById('creditsModal');
+    modal.classList.toggle('show');
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function(evento) {
     const modal = document.getElementById('creditsModal');
-    if (e.target === modal) modal.classList.remove('show');
+    if (evento.target === modal) {
+        modal.classList.remove('show');
+    }
 });
 
-function sumaMatrices(A, B) {
-    return A.map((row, i) => row.map((val, j) => val + B[i][j]));
-}
-
-function multiplicacionMatrices(A, B) {
-    return A.map((row, i) => 
-        B[0].map((_, j) => 
-            row.reduce((sum, val, k) => sum + val * B[k][j], 0)
-        )
-    );
-}
-
-function determinante(A) {
-    const n = A.length;
-    if (n === 1) return A[0][0];
-    if (n === 2) return A[0][0] * A[1][1] - A[0][1] * A[1][0];
-    return A[0].reduce((sum, val, j) => {
-        const sub = A.slice(1).map(row => row.filter((_, k) => k !== j));
-        return sum + Math.pow(-1, j) * val * determinante(sub);
-    }, 0);
-}
-
-function matrizInversa(A) {
-    const n = A.length;
-    const det = determinante(A);
-    if (Math.abs(det) < 1e-10) throw new Error("Matriz singular");
-    const aug = A.map((row, i) => [...row, ...Array(n).fill(0).map((_, j) => i === j ? 1 : 0)]);
-    for (let k = 0; k < n; k++) {
-        const pivot = aug[k][k];
-        for (let j = 0; j < 2 * n; j++) aug[k][j] /= pivot;
-        for (let i = 0; i < n; i++) {
-            if (i !== k) {
-                const f = aug[i][k];
-                for (let j = 0; j < 2 * n; j++) aug[i][j] -= f * aug[k][j];
-            }
-        }
+function mostrarResultado(texto, esError, esAdvertencia) {
+    const seccionResultado = document.getElementById('resultSection');
+    const contenidoResultado = document.getElementById('resultContent');
+    
+    seccionResultado.className = 'result-section show';
+    
+    if (esError) {
+        seccionResultado.classList.add('error');
     }
-    return aug.map(row => row.slice(n));
-}
-
-function gaussElimination(A, b) {
-    const n = b.length;
-    const M = A.map((row, i) => [...row, b[i]]);
-    for (let k = 0; k < n; k++) {
-        let maxRow = k;
-        for (let i = k + 1; i < n; i++) {
-            if (Math.abs(M[i][k]) > Math.abs(M[maxRow][k])) maxRow = i;
-        }
-        [M[k], M[maxRow]] = [M[maxRow], M[k]];
-        for (let i = k + 1; i < n; i++) {
-            const f = M[i][k] / M[k][k];
-            for (let j = k; j <= n; j++) M[i][j] -= f * M[k][j];
-        }
+    if (esAdvertencia) {
+        seccionResultado.classList.add('warning');
     }
-    const x = Array(n);
-    for (let i = n - 1; i >= 0; i--) {
-        x[i] = (M[i][n] - M[i].slice(i + 1, n).reduce((s, v, j) => s + v * x[i + 1 + j], 0)) / M[i][i];
-    }
-    return x;
-}
-
-function gaussJordan(A, b) {
-    const n = b.length;
-    const M = A.map((row, i) => [...row, b[i]]);
-    for (let k = 0; k < n; k++) {
-        const p = M[k][k];
-        for (let j = 0; j <= n; j++) M[k][j] /= p;
-        for (let i = 0; i < n; i++) {
-            if (i !== k) {
-                const f = M[i][k];
-                for (let j = 0; j <= n; j++) M[i][j] -= f * M[k][j];
-            }
-        }
-    }
-    return M.map(row => row[n]);
-}
-
-function jacobi(A, b, tol = 1e-6, maxIter = 100) {
-    const n = b.length;
-    let x = Array(n).fill(0);
-    for (let iter = 0; iter < maxIter; iter++) {
-        const xNew = x.map((_, i) => (b[i] - A[i].reduce((s, v, j) => s + (j !== i ? v * x[j] : 0), 0)) / A[i][i]);
-        if (Math.max(...xNew.map((v, i) => Math.abs(v - x[i]))) < tol) return { x: xNew, iterations: iter + 1 };
-        x = xNew;
-    }
-    return { x, iterations: maxIter };
-}
-
-function gaussSeidel(A, b, tol = 1e-6, maxIter = 100) {
-    const n = b.length;
-    let x = Array(n).fill(0);
-    for (let iter = 0; iter < maxIter; iter++) {
-        const xOld = [...x];
-        for (let i = 0; i < n; i++) {
-            x[i] = (b[i] - A[i].reduce((s, v, j) => s + (j !== i ? v * x[j] : 0), 0)) / A[i][i];
-        }
-        if (Math.max(...x.map((v, i) => Math.abs(v - xOld[i]))) < tol) return { x, iterations: iter + 1 };
-    }
-    return { x, iterations: maxIter };
-}
-
-function bisection(f, a, b, tol = 1e-8, maxIt = 100) {
-    let fa = f(a), fb = f(b);
-    if (fa * fb > 0) throw new Error("No hay cambio de signo");
-    const rows = [];
-    for (let k = 1; k <= maxIt; k++) {
-        const r = (a + b) / 2, fr = f(r);
-        rows.push({ k, a, b, r, fr });
-        if (Math.abs(fr) < tol || (b - a) / 2 < tol) break;
-        if (fa * fr < 0) { b = r; fb = fr; } else { a = r; fa = fr; }
-    }
-    return rows;
-}
-
-function secant(f, x0, x1, tol = 1e-8, maxIt = 100) {
-    const rows = [];
-    for (let k = 1; k <= maxIt; k++) {
-        const fx0 = f(x0), fx1 = f(x1);
-        if (Math.abs(fx1 - fx0) < 1e-15) throw new Error("Denominador cero");
-        const x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0), fx2 = f(x2);
-        rows.push({ k, x0, x1, x2, fx1, fx2 });
-        if (Math.abs(x2 - x1) < tol || Math.abs(fx2) < tol) break;
-        x0 = x1; x1 = x2;
-    }
-    return rows;
-}
-
-function parseMatrix(s) { return s.trim().split('\n').map(r => r.trim().split(/\s+/).map(parseFloat)); }
-function parseVector(s) { return s.trim().split(/\s+/).map(parseFloat); }
-function formatMatrix(M) { return M.map(r => r.map(x => x.toFixed(4)).join('  ')).join('\n'); }
-function formatVector(v) { return v.map(x => x.toFixed(6)).join('\n'); }
-
-function showResult(content, isError = false, isWarning = false) {
-    const sec = document.getElementById('resultSection');
-    const cont = document.getElementById('resultContent');
-    sec.className = 'result-section show';
-    if (isError) sec.classList.add('error');
-    if (isWarning) sec.classList.add('warning');
-    cont.textContent = content;
+    
+    contenidoResultado.textContent = texto;
     document.getElementById('plotSection').style.display = 'none';
 }
 
-function preprocessEq(eq, n) {
-    const vars = ['x', 'y', 'z', 'w', 'u', 'v', 't', 's', 'r', 'q'];
-    let p = eq.trim()
-        .replace(/\bsen\(/g, 'Math.sin(')
-        .replace(/\bcos\(/g, 'Math.cos(')
-        .replace(/\btan\(/g, 'Math.tan(')
-        .replace(/\bln\(/g, 'Math.log(')
-        .replace(/\blog\(/g, 'Math.log10(')
-        .replace(/\bexp\(/g, 'Math.exp(')
-        .replace(/\b(raiz|sqrt)\(/g, 'Math.sqrt(')
-        .replace(/²/g, '**2').replace(/³/g, '**3');
-    for (let i = 0; i < n; i++) p = p.replace(new RegExp(`\\b${vars[i]}\\b`, 'g'), `v[${i}]`);
-    return p;
+// ========================================
+// FUNCIONES DE CONVERSIÓN
+// ========================================
+
+function convertirTextoAMatriz(texto) {
+    const filas = texto.trim().split('\n');
+    const matriz = [];
+    
+    for (let i = 0; i < filas.length; i++) {
+        const fila = filas[i].trim().split(/\s+/);
+        const filaNumeros = [];
+        
+        for (let j = 0; j < fila.length; j++) {
+            filaNumeros.push(parseFloat(fila[j]));
+        }
+        
+        matriz.push(filaNumeros);
+    }
+    
+    return matriz;
 }
 
-function solveMatrixOperation() {
-    try {
-        const A = parseMatrix(document.getElementById('matrixA').value);
-        const B = parseMatrix(document.getElementById('matrixB').value);
-        
-        if (currentMethod === 'suma' && (A.length !== B.length || A[0].length !== B[0].length)) {
-            showResult('⚠️ ERROR DE DIMENSIONES\n\nPara sumar matrices, ambas deben tener las mismas dimensiones.\n\n💡 SUGERENCIA: Si deseas combinar estas matrices, considera usar "Multiplicación" (las columnas de A deben igualar las filas de B).', true);
-            return;
-        }
-        
-        if (currentMethod === 'multiplicacion' && A[0].length !== B.length) {
-            showResult(`⚠️ ERROR DE DIMENSIONES\n\nPara multiplicar A×B, el número de columnas de A (${A[0].length}) debe igualar el número de filas de B (${B.length}).\n\n💡 SUGERENCIA: Verifica las dimensiones o intenta multiplicar B×A si tiene sentido para tu problema.`, true);
-            return;
-        }
-        
-        const result = currentMethod === 'suma' ? sumaMatrices(A, B) : multiplicacionMatrices(A, B);
-        showResult(`Resultado de A ${currentMethod === 'suma' ? '+' : '×'} B:\n\n${formatMatrix(result)}`);
-    } catch (e) { showResult('Error: ' + e.message, true); }
+function convertirTextoAVector(texto) {
+    const elementos = texto.trim().split(/\s+/);
+    const vector = [];
+    
+    for (let i = 0; i < elementos.length; i++) {
+        vector.push(parseFloat(elementos[i]));
+    }
+    
+    return vector;
 }
 
-function solveMatrixSingle() {
-    try {
-        const M = parseMatrix(document.getElementById('matrix').value);
-        
-        if (M.length !== M[0].length) {
-            showResult(`⚠️ MATRIZ NO CUADRADA\n\nLa matriz es de ${M.length}×${M[0].length}. ${currentMethod === 'determinante' ? 'El determinante' : 'La inversa'} solo se puede calcular para matrices cuadradas (n×n).\n\n💡 SUGERENCIA: Para matrices rectangulares, considera usar la pseudoinversa (no disponible aquí) o reformula tu problema.`, true);
-            return;
-        }
-        
-        if (currentMethod === 'determinante') {
-            showResult('Determinante: ' + determinante(M).toFixed(6));
-        } else {
-            const det = determinante(M);
-            if (Math.abs(det) < 1e-10) {
-                showResult('⚠️ MATRIZ SINGULAR (NO INVERTIBLE)\n\nEl determinante es prácticamente cero, por lo que esta matriz no tiene inversa.\n\n💡 SUGERENCIA: Si necesitas resolver un sistema lineal Ax=b, usa "Gauss" o "Gauss-Jordan" que pueden identificar si el sistema tiene solución única, infinitas soluciones, o ninguna.', true);
-                return;
-            }
-            showResult('Matriz Inversa:\n\n' + formatMatrix(matrizInversa(M)));
-        }
-    } catch (e) { showResult('Error: ' + e.message, true); }
-}
-
-function solveLinearSystem() {
-    try {
-        const A = parseMatrix(document.getElementById('matrixA').value);
-        const b = parseVector(document.getElementById('vectorB').value);
-        
-        if (A.length !== b.length) {
-            showResult(`⚠️ DIMENSIONES INCOMPATIBLES\n\nLa matriz A tiene ${A.length} filas pero el vector b tiene ${b.length} elementos. Deben coincidir.\n\nVerifica tu entrada de datos.`, true);
-            return;
-        }
-        
-        if (A.length !== A[0].length) {
-            showResult(`⚠️ SISTEMA RECTANGULAR\n\nLa matriz es ${A.length}×${A[0].length}. Los métodos disponibles requieren matrices cuadradas.\n\n💡 SUGERENCIA: Para sistemas sobredeterminados o subdeterminados, considera usar mínimos cuadrados u otros métodos especializados.`, true);
-            return;
-        }
-        
-        if (['jacobi', 'gauss-seidel'].includes(currentMethod)) {
-            let diagonalDominante = true;
-            for (let i = 0; i < A.length; i++) {
-                const suma = A[i].reduce((s, v, j) => s + (i !== j ? Math.abs(v) : 0), 0);
-                if (Math.abs(A[i][i]) <= suma) {
-                    diagonalDominante = false;
-                    break;
-                }
-            }
-            if (!diagonalDominante) {
-                showResult(`⚠️ MATRIZ NO DIAGONALMENTE DOMINANTE\n\nLos métodos iterativos (Jacobi/Gauss-Seidel) pueden no converger para esta matriz.\n\n💡 SUGERENCIA: Usa "Gauss" o "Gauss-Jordan" que garantizan encontrar la solución exacta en menos iteraciones para sistemas pequeños como este.`, false, true);
+function convertirMatrizATexto(matriz) {
+    let texto = '';
+    
+    for (let i = 0; i < matriz.length; i++) {
+        for (let j = 0; j < matriz[i].length; j++) {
+            texto += matriz[i][j].toFixed(4);
+            if (j < matriz[i].length - 1) {
+                texto += '  ';
             }
         }
-        
-        let result, output;
-        if (currentMethod === 'gauss') {
-            result = gaussElimination(A, b);
-            output = 'Solución (Gauss):\n\n' + formatVector(result);
-        } else if (currentMethod === 'gauss-jordan') {
-            result = gaussJordan(A, b);
-            output = 'Solución (Gauss-Jordan):\n\n' + formatVector(result);
-        } else if (currentMethod === 'jacobi') {
-            result = jacobi(A, b);
-            output = `Solución (Jacobi):\n\n${formatVector(result.x)}\n\nIteraciones: ${result.iterations}`;
-            if (result.iterations >= 100) {
-                output += '\n\n⚠️ ADVERTENCIA: Se alcanzó el máximo de iteraciones. Considera usar Gauss-Seidel (converge más rápido) o métodos directos.';
-            }
-        } else {
-            result = gaussSeidel(A, b);
-            output = `Solución (Gauss-Seidel):\n\n${formatVector(result.x)}\n\nIteraciones: ${result.iterations}`;
-            if (result.iterations >= 100) {
-                output += '\n\n⚠️ ADVERTENCIA: Se alcanzó el máximo de iteraciones. Usa "Gauss" o "Gauss-Jordan" para una solución exacta.';
-            }
-        }
-        showResult(output);
-    } catch (e) { showResult('Error: ' + e.message, true); }
-}
-
-function solveNonLinear() {
-    try {
-        const eqs = document.getElementById('equations').value.trim().split('\n').filter(e => e.trim());
-        const initial = parseVector(document.getElementById('initial').value);
-        const proc = eqs.map(eq => preprocessEq(eq, initial.length));
-        const f = v => proc.map(eq => eval(eq));
-        let v = [...initial];
-        const h = 1e-8, tol = 1e-6, maxIter = 100;
-        let finalIter = 0;
-        for (let iter = 0; iter < maxIter; iter++) {
-            finalIter = iter + 1;
-            const fv = f(v);
-            if (Math.sqrt(fv.reduce((s, x) => s + x * x, 0)) < tol) break;
-            const J = fv.map((_, i) => v.map((_, j) => {
-                const vh = [...v]; vh[j] += h;
-                return (f(vh)[i] - fv[i]) / h;
-            }));
-            const delta = gaussElimination(J, fv.map(x => -x));
-            v = v.map((x, i) => x + delta[i]);
-            if (Math.max(...delta.map(Math.abs)) < tol) break;
-        }
-        const err = Math.sqrt(f(v).reduce((s, x) => s + x * x, 0));
-        const vars = ['x', 'y', 'z', 'w', 'u'];
-        let output = 'Solución aproximada:\n\n';
-        v.forEach((val, i) => output += `${vars[i]} = ${val.toFixed(10)}\n`);
-        output += `\nIteraciones: ${finalIter}\nError residual: ${err.toExponential(4)}`;
-        showResult(output);
-        if (initial.length === 2) {
-            document.getElementById('plotSection').style.display = 'block';
-            setTimeout(() => plotSystem(proc, v), 100);
-        }
-    } catch (e) { showResult('Error: ' + e.message, true); }
-}
-
-function solvePuntoFijo() {
-    try {
-        const gFuncs = document.getElementById('equations').value.trim().split('\n').filter(e => e.trim());
-        const initial = parseVector(document.getElementById('initial').value);
-        if (gFuncs.length !== initial.length) throw new Error("Número de funciones debe igualar variables");
-        const proc = gFuncs.map(g => preprocessEq(g, initial.length));
-        const g = v => proc.map(eq => eval(eq));
-        let v = [...initial];
-        const tol = 1e-8, maxIter = 100;
-        let finalIter = 0, history = [];
-        
-        let diverging = false;
-        for (let k = 1; k <= maxIter; k++) {
-            finalIter = k;
-            const vNew = g(v);
-            const err = Math.max(...vNew.map((x, i) => Math.abs(x - v[i])));
-            history.push({ iter: k, vNew, err });
-            
-            if (vNew.some(x => !isFinite(x))) {
-                diverging = true;
-                break;
-            }
-            
-            if (k > 10 && err > history[k - 2].err * 0.95) {
-                diverging = true;
-            }
-            
-            v = vNew;
-            if (err < tol) break;
-        }
-        
-        if (diverging || finalIter >= maxIter) {
-            showResult('⚠️ MÉTODO DE PUNTO FIJO DIVERGIENDO\n\nLa iteración no converge a una solución. Esto ocurre cuando |g\'(x)| >= 1 cerca de la raíz.\n\n💡 SUGERENCIAS:\n- Reformula las ecuaciones de otra forma (x = g(x))\n- Usa "Ec. No Lineales" (Newton multivariable) que es más robusto\n- Prueba "Newton Modificado" si tienes un buen punto inicial\n- Verifica que el sistema tenga solución real', false, true);
-            return;
-        }
-        
-        const vars = ['x', 'y', 'z', 'w', 'u'];
-        let output = 'Solución (Punto Fijo):\n\n';
-        v.forEach((val, i) => output += `${vars[i]} = ${val.toFixed(10)}\n`);
-        output += `\nIteraciones: ${finalIter}\nError final: ${history[history.length - 1].err.toExponential(4)}`;
-        
-        if (finalIter > 50) {
-            output += '\n\n💡 NOTA: Convergencia lenta. Newton o Newton Modificado convergen más rápido.';
-        }
-        
-        showResult(output);
-    } catch (e) { showResult('Error: ' + e.message, true); }
-}
-
-function solveNewtonModificado() {
-    try {
-        const eqs = document.getElementById('equations').value.trim().split('\n').filter(e => e.trim());
-        const initial = parseVector(document.getElementById('initial').value);
-        if (eqs.length !== initial.length) throw new Error("Número de ecuaciones debe igualar variables");
-        const proc = eqs.map(eq => preprocessEq(eq, initial.length));
-        const f = v => proc.map(eq => eval(eq));
-        const h = 1e-8;
-        const f0 = f(initial);
-        const J0 = f0.map((_, i) => initial.map((_, j) => {
-            const vh = [...initial]; vh[j] += h;
-            return (f(vh)[i] - f0[i]) / h;
-        }));
-        let v = [...initial];
-        const tol = 1e-8, maxIter = 50;
-        let finalIter = 0, history = [];
-        for (let k = 1; k <= maxIter; k++) {
-            finalIter = k;
-            const fv = f(v);
-            const delta = gaussElimination(J0, fv.map(x => -x));
-            v = v.map((x, i) => x + delta[i]);
-            const err = Math.max(...delta.map(Math.abs));
-            const resnorm = Math.sqrt(fv.reduce((s, x) => s + x * x, 0));
-            history.push({ iter: k, err, resnorm });
-            if (err < tol && resnorm < tol) break;
-        }
-        const vars = ['x', 'y', 'z', 'w', 'u'];
-        let output = 'Solución (Newton Modificado):\n\n';
-        v.forEach((val, i) => output += `${vars[i]} = ${val.toFixed(10)}\n`);
-        output += `\nIteraciones: ${finalIter}\nError: ${history[history.length - 1].err.toExponential(4)}`;
-        output += `\nNorma residual: ${history[history.length - 1].resnorm.toExponential(4)}`;
-        output += '\n\nNOTA: Jacobiano calculado solo en x₀';
-        showResult(output);
-    } catch (e) { showResult('Error: ' + e.message, true); }
-}
-
-function solveRootFinding() {
-    try {
-        let funcStr = document.getElementById('function').value
-            .replace(/\bsen\(/g, 'Math.sin(').replace(/\bcos\(/g, 'Math.cos(')
-            .replace(/\btan\(/g, 'Math.tan(').replace(/\bln\(/g, 'Math.log(')
-            .replace(/\blog\(/g, 'Math.log10(').replace(/\bexp\(/g, 'Math.exp(')
-            .replace(/\b(raiz|sqrt)\(/g, 'Math.sqrt(').replace(/²/g, '**2').replace(/³/g, '**3');
-        const f = x => eval(funcStr);
-        const [a, b] = parseVector(document.getElementById('interval').value);
-        
-        const fa = f(a), fb = f(b);
-        
-        if (Math.abs(fa) < 1e-6) {
-            showResult(`✓ El punto inicial a=${a} ya es una raíz aproximada\n\nf(${a}) ≈ ${fa.toExponential(4)}\n\nNo es necesario aplicar el método.`);
-            return;
-        }
-        
-        if (Math.abs(fb) < 1e-6) {
-            showResult(`✓ El punto inicial b=${b} ya es una raíz aproximada\n\nf(${b}) ≈ ${fb.toExponential(4)}\n\nNo es necesario aplicar el método.`);
-            return;
-        }
-        
-        if (currentMethod === 'biseccion' && fa * fb > 0) {
-            showResult(`⚠️ NO HAY CAMBIO DE SIGNO\n\nf(${a}) = ${fa.toFixed(4)}\nf(${b}) = ${fb.toFixed(4)}\n\nEl método de Bisección requiere que f(a) y f(b) tengan signos opuestos.\n\n💡 SUGERENCIAS:\n- Prueba otro intervalo donde la función cambie de signo\n- Usa "Secante" si tienes dos puntos cercanos a la raíz\n- Grafica la función para visualizar dónde cruza el eje x`, false, true);
-            return;
-        }
-        
-        let rows, output;
-        if (currentMethod === 'biseccion') {
-            rows = bisection(f, a, b);
-            output = 'Método de Bisección:\n\nIter\ta\t\tb\t\tr\t\tf(r)\n';
-            rows.slice(0, 6).forEach(r => output += `${r.k}\t${r.a.toFixed(6)}\t${r.b.toFixed(6)}\t${r.r.toFixed(6)}\t${r.fr.toFixed(8)}\n`);
-            if (rows.length > 6) output += `...\n${rows[rows.length - 1].k}\t${rows[rows.length - 1].r.toFixed(6)}\t\t\t${rows[rows.length - 1].fr.toFixed(8)}\n`;
-            output += `\nRaíz aproximada: ${rows[rows.length - 1].r.toFixed(10)}\nIteraciones: ${rows.length}`;
-        } else {
-            rows = secant(f, a, b);
-            output = 'Método de la Secante:\n\nIter\tx0\t\tx1\t\tx2\t\tf(x2)\n';
-            rows.forEach(r => output += `${r.k}\t${r.x0.toFixed(6)}\t${r.x1.toFixed(6)}\t${r.x2.toFixed(6)}\t${r.fx2.toFixed(8)}\n`);
-            output += `\nRaíz aproximada: ${rows[rows.length - 1].x2.toFixed(10)}\nIteraciones: ${rows.length}`;
-            
-            if (rows.length >= 50) {
-                output += '\n\n💡 NOTA: Convergencia lenta. Si tienes el intervalo con cambio de signo, Bisección puede ser más confiable.';
-            }
-        }
-        showResult(output);
-    } catch (e) { 
-        if (e.message === "Denominador cero") {
-            showResult('⚠️ DIVISIÓN POR CERO EN SECANTE\n\nLos valores f(x₀) y f(x₁) son iguales, causando división por cero.\n\n💡 SUGERENCIAS:\n- Elige puntos iniciales más separados\n- Usa "Bisección" si conoces un intervalo con cambio de signo\n- Verifica que la función no sea constante en ese rango', false, true);
-        } else {
-            showResult('Error: ' + e.message, true);
+        if (i < matriz.length - 1) {
+            texto += '\n';
         }
     }
+    
+    return texto;
 }
 
-function plotSystem(eqs, sol) {
+function convertirVectorATexto(vector) {
+    let texto = '';
+    
+    for (let i = 0; i < vector.length; i++) {
+        texto += vector[i].toFixed(6);
+        if (i < vector.length - 1) {
+            texto += '\n';
+        }
+    }
+    
+    return texto;
+}
+
+// Detecta si los números son absurdos (divergencia)
+function hayDivergencia(vector) {
+    for (let i = 0; i < vector.length; i++) {
+        if (Math.abs(vector[i]) > 1e10 || !isFinite(vector[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Verifica si una matriz es diagonalmente dominante
+function esDiagonalmenteDominante(matriz) {
+    for (let i = 0; i < matriz.length; i++) {
+        let suma = 0;
+        for (let j = 0; j < matriz.length; j++) {
+            if (i !== j) {
+                suma += Math.abs(matriz[i][j]);
+            }
+        }
+        if (Math.abs(matriz[i][i]) <= suma) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ========================================
+// OPERACIONES CON MATRICES
+// ========================================
+
+function sumarMatrices(matrizA, matrizB) {
+    const filas = matrizA.length;
+    const columnas = matrizA[0].length;
+    const resultado = [];
+    
+    for (let i = 0; i < filas; i++) {
+        const fila = [];
+        for (let j = 0; j < columnas; j++) {
+            fila.push(matrizA[i][j] + matrizB[i][j]);
+        }
+        resultado.push(fila);
+    }
+    
+    return resultado;
+}
+
+function multiplicarMatrices(matrizA, matrizB) {
+    const filasA = matrizA.length;
+    const columnasA = matrizA[0].length;
+    const columnasB = matrizB[0].length;
+    const resultado = [];
+    
+    for (let i = 0; i < filasA; i++) {
+        const fila = [];
+        for (let j = 0; j < columnasB; j++) {
+            let suma = 0;
+            for (let k = 0; k < columnasA; k++) {
+                suma = suma + (matrizA[i][k] * matrizB[k][j]);
+            }
+            fila.push(suma);
+        }
+        resultado.push(fila);
+    }
+    
+    return resultado;
+}
+
+function calcularDeterminante(matriz) {
+    const n = matriz.length;
+    
+    if (n === 1) {
+        return matriz[0][0];
+    }
+    
+    if (n === 2) {
+        return (matriz[0][0] * matriz[1][1]) - (matriz[0][1] * matriz[1][0]);
+    }
+    
+    let determinante = 0;
+    
+    for (let j = 0; j < n; j++) {
+        const submatriz = [];
+        
+        for (let i = 1; i < n; i++) {
+            const filaSubmatriz = [];
+            for (let k = 0; k < n; k++) {
+                if (k !== j) {
+                    filaSubmatriz.push(matriz[i][k]);
+                }
+            }
+            submatriz.push(filaSubmatriz);
+        }
+        
+        const signo = (j % 2 === 0) ? 1 : -1;
+        determinante += signo * matriz[0][j] * calcularDeterminante(submatriz);
+    }
+    
+    return determinante;
+}
+
+function calcularInversa(matriz) {
+    const n = matriz.length;
+    const det = calcularDeterminante(matriz);
+    
+    if (Math.abs(det) < 0.0000000001) {
+        throw new Error("La matriz no tiene inversa (determinante = 0)");
+    }
+    
+    const aumentada = [];
+    for (let i = 0; i < n; i++) {
+        const fila = [];
+        
+        for (let j = 0; j < n; j++) {
+            fila.push(matriz[i][j]);
+        }
+        
+        for (let j = 0; j < n; j++) {
+            if (i === j) {
+                fila.push(1);
+            } else {
+                fila.push(0);
+            }
+        }
+        
+        aumentada.push(fila);
+    }
+    
+    for (let k = 0; k < n; k++) {
+        const pivote = aumentada[k][k];
+        for (let j = 0; j < 2 * n; j++) {
+            aumentada[k][j] = aumentada[k][j] / pivote;
+        }
+        
+        for (let i = 0; i < n; i++) {
+            if (i !== k) {
+                const factor = aumentada[i][k];
+                for (let j = 0; j < 2 * n; j++) {
+                    aumentada[i][j] = aumentada[i][j] - (factor * aumentada[k][j]);
+                }
+            }
+        }
+    }
+    
+    const inversa = [];
+    for (let i = 0; i < n; i++) {
+        const fila = [];
+        for (let j = n; j < 2 * n; j++) {
+            fila.push(aumentada[i][j]);
+        }
+        inversa.push(fila);
+    }
+    
+    return inversa;
+}
+
+// ========================================
+// SISTEMAS DE ECUACIONES LINEALES
+// ========================================
+
+function metodoGauss(matrizA, vectorB) {
+    const n = vectorB.length;
+    
+    const aumentada = [];
+    for (let i = 0; i < n; i++) {
+        const fila = [];
+        for (let j = 0; j < n; j++) {
+            fila.push(matrizA[i][j]);
+        }
+        fila.push(vectorB[i]);
+        aumentada.push(fila);
+    }
+    
+    for (let k = 0; k < n; k++) {
+        let filaMax = k;
+        for (let i = k + 1; i < n; i++) {
+            if (Math.abs(aumentada[i][k]) > Math.abs(aumentada[filaMax][k])) {
+                filaMax = i;
+            }
+        }
+        
+        const temp = aumentada[k];
+        aumentada[k] = aumentada[filaMax];
+        aumentada[filaMax] = temp;
+        
+        for (let i = k + 1; i < n; i++) {
+            const factor = aumentada[i][k] / aumentada[k][k];
+            for (let j = k; j <= n; j++) {
+                aumentada[i][j] = aumentada[i][j] - (factor * aumentada[k][j]);
+            }
+        }
+    }
+    
+    const solucion = new Array(n);
+    for (let i = n - 1; i >= 0; i--) {
+        let suma = 0;
+        for (let j = i + 1; j < n; j++) {
+            suma = suma + (aumentada[i][j] * solucion[j]);
+        }
+        solucion[i] = (aumentada[i][n] - suma) / aumentada[i][i];
+    }
+    
+    return solucion;
+}
+
+function metodoGaussJordan(matrizA, vectorB) {
+    const n = vectorB.length;
+    
+    const aumentada = [];
+    for (let i = 0; i < n; i++) {
+        const fila = [];
+        for (let j = 0; j < n; j++) {
+            fila.push(matrizA[i][j]);
+        }
+        fila.push(vectorB[i]);
+        aumentada.push(fila);
+    }
+    
+    for (let k = 0; k < n; k++) {
+        const pivote = aumentada[k][k];
+        for (let j = 0; j <= n; j++) {
+            aumentada[k][j] = aumentada[k][j] / pivote;
+        }
+        
+        for (let i = 0; i < n; i++) {
+            if (i !== k) {
+                const factor = aumentada[i][k];
+                for (let j = 0; j <= n; j++) {
+                    aumentada[i][j] = aumentada[i][j] - (factor * aumentada[k][j]);
+                }
+            }
+        }
+    }
+    
+    const solucion = [];
+    for (let i = 0; i < n; i++) {
+        solucion.push(aumentada[i][n]);
+    }
+    
+    return solucion;
+}
+
+function metodoJacobi(matrizA, vectorB) {
+    const n = vectorB.length;
+    const tolerancia = 0.000001;
+    const maxIteraciones = 100;
+    
+    let x = new Array(n);
+    for (let i = 0; i < n; i++) {
+        x[i] = 0;
+    }
+    
+    for (let iter = 0; iter < maxIteraciones; iter++) {
+        const xNuevo = new Array(n);
+        
+        for (let i = 0; i < n; i++) {
+            let suma = 0;
+            for (let j = 0; j < n; j++) {
+                if (j !== i) {
+                    suma = suma + (matrizA[i][j] * x[j]);
+                }
+            }
+            xNuevo[i] = (vectorB[i] - suma) / matrizA[i][i];
+        }
+        
+        let maxDiferencia = 0;
+        for (let i = 0; i < n; i++) {
+            const diferencia = Math.abs(xNuevo[i] - x[i]);
+            if (diferencia > maxDiferencia) {
+                maxDiferencia = diferencia;
+            }
+        }
+        
+        x = xNuevo;
+        
+        if (maxDiferencia < tolerancia) {
+            return { solucion: x, iteraciones: iter + 1 };
+        }
+    }
+    
+    return { solucion: x, iteraciones: maxIteraciones };
+}
+
+function metodoGaussSeidel(matrizA, vectorB) {
+    const n = vectorB.length;
+    const tolerancia = 0.000001;
+    const maxIteraciones = 100;
+    
+    let x = new Array(n);
+    for (let i = 0; i < n; i++) {
+        x[i] = 0;
+    }
+    
+    for (let iter = 0; iter < maxIteraciones; iter++) {
+        const xAnterior = [];
+        for (let i = 0; i < n; i++) {
+            xAnterior.push(x[i]);
+        }
+        
+        for (let i = 0; i < n; i++) {
+            let suma = 0;
+            for (let j = 0; j < n; j++) {
+                if (j !== i) {
+                    suma = suma + (matrizA[i][j] * x[j]);
+                }
+            }
+            x[i] = (vectorB[i] - suma) / matrizA[i][i];
+        }
+        
+        let maxDiferencia = 0;
+        for (let i = 0; i < n; i++) {
+            const diferencia = Math.abs(x[i] - xAnterior[i]);
+            if (diferencia > maxDiferencia) {
+                maxDiferencia = diferencia;
+            }
+        }
+        
+        if (maxDiferencia < tolerancia) {
+            return { solucion: x, iteraciones: iter + 1 };
+        }
+    }
+    
+    return { solucion: x, iteraciones: maxIteraciones };
+}
+
+// ========================================
+// ECUACIONES NO LINEALES (1 VARIABLE)
+// ========================================
+
+function metodoBiseccion(funcionTexto, a, b) {
+    const tolerancia = 0.00000001;
+    const maxIteraciones = 100;
+    
+    const f = function(x) {
+        return eval(funcionTexto);
+    };
+    
+    let fa = f(a);
+    let fb = f(b);
+    
+    if (fa * fb > 0) {
+        throw new Error("No hay cambio de signo en el intervalo");
+    }
+    
+    const resultados = [];
+    
+    for (let k = 1; k <= maxIteraciones; k++) {
+        const r = (a + b) / 2;
+        const fr = f(r);
+        
+        resultados.push({
+            iteracion: k,
+            a: a,
+            b: b,
+            raiz: r,
+            fr: fr
+        });
+        
+        if (Math.abs(fr) < tolerancia || (b - a) / 2 < tolerancia) {
+            break;
+        }
+        
+        if (fa * fr < 0) {
+            b = r;
+            fb = fr;
+        } else {
+            a = r;
+            fa = fr;
+        }
+    }
+    
+    return resultados;
+}
+
+function metodoSecante(funcionTexto, x0, x1) {
+    const tolerancia = 0.00000001;
+    const maxIteraciones = 100;
+    
+    const f = function(x) {
+        return eval(funcionTexto);
+    };
+    
+    const resultados = [];
+    
+    for (let k = 1; k <= maxIteraciones; k++) {
+        const fx0 = f(x0);
+        const fx1 = f(x1);
+        
+        if (Math.abs(fx1 - fx0) < 0.000000000000001) {
+            throw new Error("División por cero en el método");
+        }
+        
+        const x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0);
+        const fx2 = f(x2);
+        
+        resultados.push({
+            iteracion: k,
+            x0: x0,
+            x1: x1,
+            x2: x2,
+            fx1: fx1,
+            fx2: fx2
+        });
+        
+        if (Math.abs(x2 - x1) < tolerancia || Math.abs(fx2) < tolerancia) {
+            break;
+        }
+        
+        x0 = x1;
+        x1 = x2;
+    }
+    
+    return resultados;
+}
+
+// ========================================
+// SISTEMAS NO LINEALES (MÚLTIPLES VARIABLES)
+// ========================================
+
+function preprocesarEcuacion(ecuacion, numVars) {
+    const vars = ['x', 'y', 'z', 'w', 'u'];
+    
+    let resultado = ecuacion;
+    resultado = resultado.replace(/\bsen\(/g, 'Math.sin(');
+    resultado = resultado.replace(/\bcos\(/g, 'Math.cos(');
+    resultado = resultado.replace(/\btan\(/g, 'Math.tan(');
+    resultado = resultado.replace(/\bln\(/g, 'Math.log(');
+    resultado = resultado.replace(/\blog\(/g, 'Math.log10(');
+    resultado = resultado.replace(/\bexp\(/g, 'Math.exp(');
+    resultado = resultado.replace(/\braiz\(/g, 'Math.sqrt(');
+    resultado = resultado.replace(/\bsqrt\(/g, 'Math.sqrt(');
+    resultado = resultado.replace(/²/g, '**2');
+    resultado = resultado.replace(/³/g, '**3');
+    
+    for (let i = 0; i < numVars; i++) {
+        resultado = resultado.replace(new RegExp('\\b' + vars[i] + '\\b', 'g'), 'v[' + i + ']');
+    }
+    
+    return resultado;
+}
+
+function metodoNewton(ecuaciones, inicial) {
+    const n = inicial.length;
+    const h = 0.00000001;
+    const tolerancia = 0.000001;
+    const maxIter = 100;
+    
+    let v = [];
+    for (let i = 0; i < n; i++) {
+        v.push(inicial[i]);
+    }
+    
+    let iteracion = 0;
+    
+    for (iteracion = 0; iteracion < maxIter; iteracion++) {
+        // Evaluar F(v)
+        const fv = [];
+        for (let i = 0; i < n; i++) {
+            fv.push(eval(ecuaciones[i]));
+        }
+        
+        // Verificar convergencia
+        let norma = 0;
+        for (let i = 0; i < n; i++) {
+            norma += fv[i] * fv[i];
+        }
+        norma = Math.sqrt(norma);
+        
+        if (norma < tolerancia) {
+            break;
+        }
+        
+        // Calcular Jacobiano
+        const J = [];
+        for (let i = 0; i < n; i++) {
+            const filaJ = [];
+            for (let j = 0; j < n; j++) {
+                const vTemp = [];
+                for (let k = 0; k < n; k++) {
+                    vTemp.push(v[k]);
+                }
+                vTemp[j] += h;
+                
+                const vOriginal = v;
+                v = vTemp;
+                const fvh = eval(ecuaciones[i]);
+                v = vOriginal;
+                
+                filaJ.push((fvh - fv[i]) / h);
+            }
+            J.push(filaJ);
+        }
+        
+        // Resolver J * delta = -F
+        const negF = [];
+        for (let i = 0; i < n; i++) {
+            negF.push(-fv[i]);
+        }
+        
+        const delta = metodoGauss(J, negF);
+        
+        // Actualizar v
+        for (let i = 0; i < n; i++) {
+            v[i] = v[i] + delta[i];
+        }
+        
+        // Verificar si delta es pequeño
+        let maxDelta = 0;
+        for (let i = 0; i < n; i++) {
+            if (Math.abs(delta[i]) > maxDelta) {
+                maxDelta = Math.abs(delta[i]);
+            }
+        }
+        
+        if (maxDelta < tolerancia) {
+            break;
+        }
+    }
+    
+    return { solucion: v, iteraciones: iteracion + 1 };
+}
+
+function metodoPuntoFijo(funcionesG, inicial) {
+    const n = inicial.length;
+    const tolerancia = 0.00000001;
+    const maxIter = 100;
+    
+    let v = [];
+    for (let i = 0; i < n; i++) {
+        v.push(inicial[i]);
+    }
+    
+    let iteracion = 0;
+    
+    for (iteracion = 0; iteracion < maxIter; iteracion++) {
+        const vNuevo = [];
+        
+        for (let i = 0; i < n; i++) {
+            vNuevo.push(eval(funcionesG[i]));
+        }
+        
+        // Verificar divergencia
+        for (let i = 0; i < n; i++) {
+            if (!isFinite(vNuevo[i]) || Math.abs(vNuevo[i]) > 1e10) {
+                throw new Error("El método diverge");
+            }
+        }
+        
+        // Calcular error
+        let maxError = 0;
+        for (let i = 0; i < n; i++) {
+            const error = Math.abs(vNuevo[i] - v[i]);
+            if (error > maxError) {
+                maxError = error;
+            }
+        }
+        
+        v = vNuevo;
+        
+        if (maxError < tolerancia) {
+            break;
+        }
+    }
+    
+    if (iteracion >= maxIter) {
+        throw new Error("No convergió en " + maxIter + " iteraciones");
+    }
+    
+    return { solucion: v, iteraciones: iteracion + 1 };
+}
+
+function metodoNewtonModificado(ecuaciones, inicial) {
+    const n = inicial.length;
+    const h = 0.00000001;
+    const tolerancia = 0.000001;
+    const maxIter = 50;
+    
+    // Calcular Jacobiano solo una vez en el punto inicial
+    const v0 = inicial;
+    const fv0 = [];
+    for (let i = 0; i < n; i++) {
+        const v = v0;
+        fv0.push(eval(ecuaciones[i]));
+    }
+    
+    const J0 = [];
+    for (let i = 0; i < n; i++) {
+        const filaJ = [];
+        for (let j = 0; j < n; j++) {
+            const vTemp = [];
+            for (let k = 0; k < n; k++) {
+                vTemp.push(v0[k]);
+            }
+            vTemp[j] += h;
+            
+            const v = vTemp;
+            const fvh = eval(ecuaciones[i]);
+            
+            filaJ.push((fvh - fv0[i]) / h);
+        }
+        J0.push(filaJ);
+    }
+    
+    // Iterar con Jacobiano fijo
+    let v = [];
+    for (let i = 0; i < n; i++) {
+        v.push(inicial[i]);
+    }
+    
+    let iteracion = 0;
+    
+    for (iteracion = 0; iteracion < maxIter; iteracion++) {
+        const fv = [];
+        for (let i = 0; i < n; i++) {
+            fv.push(eval(ecuaciones[i]));
+        }
+        
+        const negF = [];
+        for (let i = 0; i < n; i++) {
+            negF.push(-fv[i]);
+        }
+        
+        const delta = metodoGauss(J0, negF);
+        
+        for (let i = 0; i < n; i++) {
+            v[i] = v[i] + delta[i];
+        }
+        
+        let maxDelta = 0;
+        for (let i = 0; i < n; i++) {
+            if (Math.abs(delta[i]) > maxDelta) {
+                maxDelta = Math.abs(delta[i]);
+            }
+        }
+        
+        if (maxDelta < tolerancia) {
+            break;
+        }
+    }
+    
+    return { solucion: v, iteraciones: iteracion + 1 };
+}
+
+// ========================================
+// FUNCIONES DE GRAFICACIÓN
+// ========================================
+
+function graficarSistema(ecuaciones, solucion) {
     const canvas = document.getElementById('plotCanvas');
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const w = canvas.width, h = canvas.height;
+    const w = canvas.width;
+    const h = canvas.height;
     
     ctx.fillStyle = '#1e1e2e';
     ctx.fillRect(0, 0, w, h);
     
-    const [solX, solY] = sol;
-    const range = 4;
-    const xMin = solX - range, xMax = solX + range;
-    const yMin = solY - range, yMax = solY + range;
+    const solX = solucion[0];
+    const solY = solucion[1];
+    const rango = 4;
+    const xMin = solX - rango;
+    const xMax = solX + rango;
+    const yMin = solY - rango;
+    const yMax = solY + rango;
     
-    const toPixelX = x => ((x - xMin) / (xMax - xMin)) * w;
-    const toPixelY = y => h - ((y - yMin) / (yMax - yMin)) * h;
+    function toPixelX(x) {
+        return ((x - xMin) / (xMax - xMin)) * w;
+    }
     
+    function toPixelY(y) {
+        return h - ((y - yMin) / (yMax - yMin)) * h;
+    }
+    
+    // Dibujar cuadrícula
     ctx.strokeStyle = '#2a2a3e';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 20; i++) {
@@ -459,12 +781,14 @@ function plotSystem(eqs, sol) {
         ctx.moveTo(toPixelX(xMin + (xMax - xMin) * i / 20), 0);
         ctx.lineTo(toPixelX(xMin + (xMax - xMin) * i / 20), h);
         ctx.stroke();
+        
         ctx.beginPath();
         ctx.moveTo(0, toPixelY(yMin + (yMax - yMin) * i / 20));
         ctx.lineTo(w, toPixelY(yMin + (yMax - yMin) * i / 20));
         ctx.stroke();
     }
     
+    // Dibujar ejes
     ctx.strokeStyle = '#4a4a5e';
     ctx.lineWidth = 2;
     if (yMin <= 0 && yMax >= 0) {
@@ -480,72 +804,80 @@ function plotSystem(eqs, sol) {
         ctx.stroke();
     }
     
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '11px Arial';
-    ctx.textAlign = 'center';
-    for (let i = 0; i <= 4; i++) {
-        const x = xMin + (xMax - xMin) * i / 4;
-        const yPos = (yMin <= 0 && yMax >= 0) ? toPixelY(0) + 15 : h - 5;
-        ctx.fillText(x.toFixed(1), toPixelX(x), yPos);
-    }
-    ctx.textAlign = 'right';
-    for (let i = 0; i <= 4; i++) {
-        const y = yMin + (yMax - yMin) * i / 4;
-        const xPos = (xMin <= 0 && xMax >= 0) ? toPixelX(0) - 5 : 35;
-        ctx.fillText(y.toFixed(1), xPos, toPixelY(y) + 4);
-    }
+    // Dibujar ecuaciones
+    const colores = ['#f87171', '#60a5fa'];
+    const resolucion = 500;
     
-    const colors = ['#f87171', '#60a5fa'];
-    const gridSize = 500;
-    
-    eqs.forEach((eq, idx) => {
+    for (let eqIdx = 0; eqIdx < ecuaciones.length; eqIdx++) {
         const grid = [];
-        for (let i = 0; i <= gridSize; i++) {
+        for (let i = 0; i <= resolucion; i++) {
             grid[i] = [];
-            for (let j = 0; j <= gridSize; j++) {
-                const x = xMin + (xMax - xMin) * i / gridSize;
-                const y = yMin + (yMax - yMin) * j / gridSize;
+            for (let j = 0; j <= resolucion; j++) {
+                const x = xMin + (xMax - xMin) * i / resolucion;
+                const y = yMin + (yMax - yMin) * j / resolucion;
                 const v = [x, y];
-                try { grid[i][j] = eval(eq); } catch { grid[i][j] = NaN; }
+                try {
+                    grid[i][j] = eval(ecuaciones[eqIdx]);
+                } catch (e) {
+                    grid[i][j] = NaN;
+                }
             }
         }
         
-        ctx.strokeStyle = colors[idx];
+        ctx.strokeStyle = colores[eqIdx];
         ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
         
-        for (let i = 0; i < gridSize; i++) {
-            for (let j = 0; j < gridSize; j++) {
-                const v00 = grid[i][j], v10 = grid[i + 1][j];
-                const v01 = grid[i][j + 1], v11 = grid[i + 1][j + 1];
+        for (let i = 0; i < resolucion; i++) {
+            for (let j = 0; j < resolucion; j++) {
+                const v00 = grid[i][j];
+                const v10 = grid[i + 1][j];
+                const v01 = grid[i][j + 1];
+                const v11 = grid[i + 1][j + 1];
                 
-                if ([v00, v10, v01, v11].some(isNaN)) continue;
+                if (isNaN(v00) || isNaN(v10) || isNaN(v01) || isNaN(v11)) continue;
                 
                 const signs = [v00 > 0, v10 > 0, v01 > 0, v11 > 0];
-                if (signs.some(s => s) && signs.some(s => !s)) {
-                    const x1 = xMin + (xMax - xMin) * i / gridSize;
-                    const x2 = xMin + (xMax - xMin) * (i + 1) / gridSize;
-                    const y1 = yMin + (yMax - yMin) * j / gridSize;
-                    const y2 = yMin + (yMax - yMin) * (j + 1) / gridSize;
+                const hayPositivo = signs[0] || signs[1] || signs[2] || signs[3];
+                const hayNegativo = !signs[0] || !signs[1] || !signs[2] || !signs[3];
+                
+                if (hayPositivo && hayNegativo) {
+                    const x1 = xMin + (xMax - xMin) * i / resolucion;
+                    const x2 = xMin + (xMax - xMin) * (i + 1) / resolucion;
+                    const y1 = yMin + (yMax - yMin) * j / resolucion;
+                    const y2 = yMin + (yMax - yMin) * (j + 1) / resolucion;
                     
                     const pts = [];
-                    if ((v00 > 0) !== (v10 > 0)) pts.push([x1 + Math.abs(v00) / (Math.abs(v00) + Math.abs(v10)) * (x2 - x1), y1]);
-                    if ((v10 > 0) !== (v11 > 0)) pts.push([x2, y1 + Math.abs(v10) / (Math.abs(v10) + Math.abs(v11)) * (y2 - y1)]);
-                    if ((v01 > 0) !== (v11 > 0)) pts.push([x1 + Math.abs(v01) / (Math.abs(v01) + Math.abs(v11)) * (x2 - x1), y2]);
-                    if ((v00 > 0) !== (v01 > 0)) pts.push([x1, y1 + Math.abs(v00) / (Math.abs(v00) + Math.abs(v01)) * (y2 - y1)]);
+                    if ((v00 > 0) !== (v10 > 0)) {
+                        const t = Math.abs(v00) / (Math.abs(v00) + Math.abs(v10));
+                        pts.push([x1 + t * (x2 - x1), y1]);
+                    }
+                    if ((v10 > 0) !== (v11 > 0)) {
+                        const t = Math.abs(v10) / (Math.abs(v10) + Math.abs(v11));
+                        pts.push([x2, y1 + t * (y2 - y1)]);
+                    }
+                    if ((v01 > 0) !== (v11 > 0)) {
+                        const t = Math.abs(v01) / (Math.abs(v01) + Math.abs(v11));
+                        pts.push([x1 + t * (x2 - x1), y2]);
+                    }
+                    if ((v00 > 0) !== (v01 > 0)) {
+                        const t = Math.abs(v00) / (Math.abs(v00) + Math.abs(v01));
+                        pts.push([x1, y1 + t * (y2 - y1)]);
+                    }
                     
                     if (pts.length >= 2) {
                         ctx.beginPath();
                         ctx.moveTo(toPixelX(pts[0][0]), toPixelY(pts[0][1]));
-                        for (let k = 1; k < pts.length; k++) ctx.lineTo(toPixelX(pts[k][0]), toPixelY(pts[k][1]));
+                        for (let k = 1; k < pts.length; k++) {
+                            ctx.lineTo(toPixelX(pts[k][0]), toPixelY(pts[k][1]));
+                        }
                         ctx.stroke();
                     }
                 }
             }
         }
-    });
+    }
     
+    // Dibujar solución
     ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
     ctx.shadowBlur = 20;
     ctx.fillStyle = '#a855f7';
@@ -557,98 +889,565 @@ function plotSystem(eqs, sol) {
     ctx.lineWidth = 3;
     ctx.stroke();
     
+    // Etiqueta de solución
     ctx.fillStyle = 'rgba(30, 30, 46, 0.9)';
     ctx.strokeStyle = '#a855f7';
     ctx.lineWidth = 2;
-    const label = `(${solX.toFixed(3)}, ${solY.toFixed(3)})`;
+    const etiqueta = '(' + solX.toFixed(3) + ', ' + solY.toFixed(3) + ')';
     ctx.font = 'bold 12px Arial';
-    const labelWidth = ctx.measureText(label).width + 16;
-    const labelX = toPixelX(solX) + 15;
-    const labelY = toPixelY(solY) - 20;
-    ctx.fillRect(labelX - 8, labelY - 16, labelWidth, 24);
-    ctx.strokeRect(labelX - 8, labelY - 16, labelWidth, 24);
+    const anchoEtiqueta = ctx.measureText(etiqueta).width + 16;
+    const etiquetaX = toPixelX(solX) + 15;
+    const etiquetaY = toPixelY(solY) - 20;
+    ctx.fillRect(etiquetaX - 8, etiquetaY - 16, anchoEtiqueta, 24);
+    ctx.strokeRect(etiquetaX - 8, etiquetaY - 16, anchoEtiqueta, 24);
     ctx.fillStyle = '#c4b5fd';
     ctx.textAlign = 'left';
-    ctx.fillText(label, labelX, labelY);
+    ctx.fillText(etiqueta, etiquetaX, etiquetaY);
     
-    const legendX = 15, legendY = 15;
+    // Leyenda
+    const leyendaX = 15;
+    const leyendaY = 15;
     ctx.fillStyle = 'rgba(30, 30, 46, 0.95)';
     ctx.strokeStyle = '#3d3d54';
     ctx.lineWidth = 2;
-    ctx.fillRect(legendX - 5, legendY - 5, 140, 75);
-    ctx.strokeRect(legendX - 5, legendY - 5, 140, 75);
+    ctx.fillRect(leyendaX - 5, leyendaY - 5, 140, 75);
+    ctx.strokeRect(leyendaX - 5, leyendaY - 5, 140, 75);
+    
     ctx.font = 'bold 13px Arial';
-    ctx.strokeStyle = colors[0];
+    ctx.strokeStyle = colores[0];
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(legendX, legendY + 5);
-    ctx.lineTo(legendX + 25, legendY + 5);
+    ctx.moveTo(leyendaX, leyendaY + 5);
+    ctx.lineTo(leyendaX + 25, leyendaY + 5);
     ctx.stroke();
     ctx.fillStyle = '#e5e5e5';
     ctx.textAlign = 'left';
-    ctx.fillText('Ecuación 1', legendX + 35, legendY + 9);
-    ctx.strokeStyle = colors[1];
+    ctx.fillText('Ecuación 1', leyendaX + 35, leyendaY + 9);
+    
+    ctx.strokeStyle = colores[1];
     ctx.beginPath();
-    ctx.moveTo(legendX, legendY + 28);
-    ctx.lineTo(legendX + 25, legendY + 28);
+    ctx.moveTo(leyendaX, leyendaY + 28);
+    ctx.lineTo(leyendaX + 25, leyendaY + 28);
     ctx.stroke();
     ctx.fillStyle = '#e5e5e5';
-    ctx.fillText('Ecuación 2', legendX + 35, legendY + 32);
+    ctx.fillText('Ecuación 2', leyendaX + 35, leyendaY + 32);
+    
     ctx.fillStyle = '#a855f7';
     ctx.beginPath();
-    ctx.arc(legendX + 12, legendY + 54, 6, 0, 2 * Math.PI);
+    ctx.arc(leyendaX + 12, leyendaY + 54, 6, 0, 2 * Math.PI);
     ctx.fill();
     ctx.fillStyle = '#e5e5e5';
-    ctx.fillText('Solución', legendX + 35, legendY + 58);
+    ctx.fillText('Solución', leyendaX + 35, leyendaY + 58);
 }
 
-function createInputUI(method) {
-    const sec = document.getElementById('inputSection');
-    let html = '';
-    if (['suma', 'multiplicacion'].includes(method)) {
-        html = `<div class="input-group"><label>Matriz A:</label><textarea id="matrixA" placeholder="1 2&#10;3 4"></textarea></div>
-                <div class="input-group"><label>Matriz B:</label><textarea id="matrixB" placeholder="5 6&#10;7 8"></textarea></div>
-                <button class="solve-btn" onclick="solveMatrixOperation()">Calcular</button>`;
-    } else if (['determinante', 'inversa'].includes(method)) {
-        html = `<div class="input-group"><label>Matriz:</label><textarea id="matrix" placeholder="4 2&#10;3 1"></textarea></div>
-                <button class="solve-btn" onclick="solveMatrixSingle()">Calcular</button>`;
-    } else if (['gauss', 'gauss-jordan', 'jacobi', 'gauss-seidel'].includes(method)) {
-        html = `<div class="input-group"><label>Matriz A:</label><textarea id="matrixA" placeholder="2 3&#10;1 -1"></textarea></div>
-                <div class="input-group"><label>Vector b:</label><input type="text" id="vectorB" placeholder="8 1"></div>
-                <button class="solve-btn" onclick="solveLinearSystem()">Resolver</button>`;
-    } else if (method === 'no-lineal') {
-        html = `<div class="input-group"><label>Ecuaciones:</label><textarea id="equations" placeholder="x**2 + y**2 - 4&#10;exp(x) + y - 1"></textarea>
-                <div class="help-text">Variables: x, y, z. Funciones: sen(), cos(), ln(), exp(), raiz()</div></div>
-                <div class="input-group"><label>Punto inicial:</label><input type="text" id="initial" placeholder="0.5 0.5"></div>
-                <button class="solve-btn" onclick="solveNonLinear()">Resolver</button>`;
-    } else if (method === 'punto-fijo') {
-        html = `<div class="input-group"><label>Funciones g(x):</label><textarea id="equations" placeholder="cos(y)&#10;sen(x)"></textarea>
-                <div class="help-text">Sistema x = g(x). Escribir cada componente de g.</div></div>
-                <div class="input-group"><label>Punto inicial:</label><input type="text" id="initial" placeholder="0.5 0.5"></div>
-                <button class="solve-btn" onclick="solvePuntoFijo()">Resolver</button>`;
-    } else if (method === 'newton-mod') {
-        html = `<div class="input-group"><label>Ecuaciones f(x) = 0:</label><textarea id="equations" placeholder="x**2 + y + z - 4&#10;y**2 + z + x - 5"></textarea>
-                <div class="help-text">Jacobiano calculado solo en x₀</div></div>
-                <div class="input-group"><label>Punto inicial:</label><input type="text" id="initial" placeholder="1 1 1"></div>
-                <button class="solve-btn" onclick="solveNewtonModificado()">Resolver</button>`;
-    } else if (['biseccion', 'secante'].includes(method)) {
-        html = `<div class="input-group"><label>Función f(x):</label><input type="text" id="function" placeholder="x**3 - x - 2">
-                <div class="help-text">Funciones: sen(), cos(), ln(), exp(), raiz()</div></div>
-                <div class="input-group"><label>Intervalo [a, b]:</label><input type="text" id="interval" placeholder="1 2"></div>
-                <button class="solve-btn" onclick="solveRootFinding()">Resolver</button>`;
+// ========================================
+// FUNCIONES AUXILIARES
+// ========================================
+
+function preprocesarFuncion(texto) {
+    let resultado = texto;
+    
+    resultado = resultado.replace(/\bsen\(/g, 'Math.sin(');
+    resultado = resultado.replace(/\bcos\(/g, 'Math.cos(');
+    resultado = resultado.replace(/\btan\(/g, 'Math.tan(');
+    resultado = resultado.replace(/\bln\(/g, 'Math.log(');
+    resultado = resultado.replace(/\blog\(/g, 'Math.log10(');
+    resultado = resultado.replace(/\bexp\(/g, 'Math.exp(');
+    resultado = resultado.replace(/\braiz\(/g, 'Math.sqrt(');
+    resultado = resultado.replace(/\bsqrt\(/g, 'Math.sqrt(');
+    resultado = resultado.replace(/²/g, '**2');
+    resultado = resultado.replace(/³/g, '**3');
+    
+    return resultado;
+}
+
+// ========================================
+// FUNCIONES DE RESOLUCIÓN
+// ========================================
+
+function resolverOperacionMatrices() {
+    try {
+        const textoA = document.getElementById('matrixA').value;
+        const textoB = document.getElementById('matrixB').value;
+        
+        const matrizA = convertirTextoAMatriz(textoA);
+        const matrizB = convertirTextoAMatriz(textoB);
+        
+        if (metodoActual === 'suma') {
+            if (matrizA.length !== matrizB.length || matrizA[0].length !== matrizB[0].length) {
+                mostrarResultado('❌ Error: Las matrices deben tener las mismas dimensiones para sumar.\n💡 Para multiplicar, las columnas de A deben igualar las filas de B.', true);
+                return;
+            }
+            const resultado = sumarMatrices(matrizA, matrizB);
+            mostrarResultado('Resultado de A + B:\n\n' + convertirMatrizATexto(resultado));
+            
+        } else if (metodoActual === 'multiplicacion') {
+            if (matrizA[0].length !== matrizB.length) {
+                mostrarResultado('❌ Error: Para A×B, columnas de A (' + matrizA[0].length + ') deben igualar filas de B (' + matrizB.length + ').\n💡 Verifica las dimensiones o prueba B×A.', true);
+                return;
+            }
+            const resultado = multiplicarMatrices(matrizA, matrizB);
+            mostrarResultado('Resultado de A × B:\n\n' + convertirMatrizATexto(resultado));
+        }
+        
+    } catch (error) {
+        mostrarResultado('❌ Error: ' + error.message, true);
     }
-    sec.innerHTML = html;
 }
 
-document.querySelectorAll('.method-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+function resolverOperacionMatrizUnica() {
+    try {
+        const texto = document.getElementById('matrix').value;
+        const matriz = convertirTextoAMatriz(texto);
+        
+        if (matriz.length !== matriz[0].length) {
+            mostrarResultado('❌ Error: La matriz debe ser cuadrada (n×n).\nIngresa una matriz con igual cantidad de filas y columnas.', true);
+            return;
+        }
+        
+        if (metodoActual === 'determinante') {
+            const det = calcularDeterminante(matriz);
+            mostrarResultado('Determinante = ' + det.toFixed(6));
+            
+        } else if (metodoActual === 'inversa') {
+            const det = calcularDeterminante(matriz);
+            if (Math.abs(det) < 0.0000000001) {
+                mostrarResultado('❌ Matriz singular: No tiene inversa (det ≈ 0).\n💡 Para sistemas lineales Ax=b, usa "Gauss" o "Gauss-Jordan".', true);
+                return;
+            }
+            const inversa = calcularInversa(matriz);
+            mostrarResultado('Matriz Inversa:\n\n' + convertirMatrizATexto(inversa));
+        }
+        
+    } catch (error) {
+        mostrarResultado('❌ Error: ' + error.message, true);
+    }
+}
+
+function resolverSistemaLineal() {
+    try {
+        const textoA = document.getElementById('matrixA').value;
+        const textoB = document.getElementById('vectorB').value;
+        
+        const matrizA = convertirTextoAMatriz(textoA);
+        const vectorB = convertirTextoAVector(textoB);
+        
+        if (matrizA.length !== vectorB.length) {
+            mostrarResultado('❌ Error: Dimensiones incompatibles.\nLa matriz A y el vector b deben tener el mismo número de filas.', true);
+            return;
+        }
+        
+        if (matrizA.length !== matrizA[0].length) {
+            mostrarResultado('❌ Error: La matriz debe ser cuadrada.\n💡 Para sistemas rectangulares, usa otros métodos especializados.', true);
+            return;
+        }
+        
+        let resultado;
+        let texto = '';
+        
+        if (metodoActual === 'gauss') {
+            resultado = metodoGauss(matrizA, vectorB);
+            texto = 'Solución (Método de Gauss):\n\n' + convertirVectorATexto(resultado);
+            
+        } else if (metodoActual === 'gauss-jordan') {
+            resultado = metodoGaussJordan(matrizA, vectorB);
+            texto = 'Solución (Método de Gauss-Jordan):\n\n' + convertirVectorATexto(resultado);
+            
+        } else if (metodoActual === 'jacobi') {
+            resultado = metodoJacobi(matrizA, vectorB);
+            
+            if (hayDivergencia(resultado.solucion)) {
+                let mensaje = '❌ Método divergió ';
+                if (!esDiagonalmenteDominante(matrizA)) {
+                    mensaje += '(matriz no diag. dominante)';
+                } else {
+                    mensaje += '(números inválidos)';
+                }
+                mensaje += '\n💡 Usa "Gauss" para solución garantizada';
+                mostrarResultado(mensaje, true);
+                return;
+            }
+            
+            texto = 'Solución (Método de Jacobi):\n\n' + convertirVectorATexto(resultado.solucion);
+            texto += '\n\nIteraciones: ' + resultado.iteraciones;
+            if (resultado.iteraciones >= 100) {
+                texto += '\n\n⚠️ No convergió. Prueba "Gauss"';
+            }
+            
+        } else if (metodoActual === 'gauss-seidel') {
+            resultado = metodoGaussSeidel(matrizA, vectorB);
+            
+            if (hayDivergencia(resultado.solucion)) {
+                let mensaje = '❌ Método divergió ';
+                if (!esDiagonalmenteDominante(matrizA)) {
+                    mensaje += '(matriz no diag. dominante)';
+                } else {
+                    mensaje += '(números inválidos)';
+                }
+                mensaje += '\n💡 Usa "Gauss" o "Gauss-Jordan"';
+                mostrarResultado(mensaje, true);
+                return;
+            }
+            
+            texto = 'Solución (Método de Gauss-Seidel):\n\n' + convertirVectorATexto(resultado.solucion);
+            texto += '\n\nIteraciones: ' + resultado.iteraciones;
+            if (resultado.iteraciones >= 100) {
+                texto += '\n\n⚠️ No convergió. Prueba "Gauss"';
+            }
+        }
+        
+        mostrarResultado(texto);
+        
+    } catch (error) {
+        mostrarResultado('❌ Error: ' + error.message, true);
+    }
+}
+
+function resolverEcuacionNoLineal() {
+    try {
+        let funcionTexto = document.getElementById('function').value;
+        const intervaloTexto = document.getElementById('interval').value;
+        
+        funcionTexto = preprocesarFuncion(funcionTexto);
+        
+        const intervalo = convertirTextoAVector(intervaloTexto);
+        const a = intervalo[0];
+        const b = intervalo[1];
+        
+        let resultados;
+        let texto = '';
+        
+        if (metodoActual === 'biseccion') {
+            resultados = metodoBiseccion(funcionTexto, a, b);
+            
+            texto = 'Método de Bisección:\n\n';
+            texto += 'Iter\ta\t\tb\t\tr\t\tf(r)\n';
+            texto += '-'.repeat(60) + '\n';
+            
+            for (let i = 0; i < Math.min(6, resultados.length); i++) {
+                const r = resultados[i];
+                texto += r.iteracion + '\t' + r.a.toFixed(6) + '\t' + 
+                        r.b.toFixed(6) + '\t' + r.raiz.toFixed(6) + '\t' + 
+                        r.fr.toFixed(8) + '\n';
+            }
+            
+            if (resultados.length > 6) {
+                texto += '...\n';
+                const ultimo = resultados[resultados.length - 1];
+                texto += ultimo.iteracion + '\t\t\t\t' + ultimo.raiz.toFixed(6) + '\t' + 
+                        ultimo.fr.toFixed(8) + '\n';
+            }
+            
+            const ultimo = resultados[resultados.length - 1];
+            texto += '\nRaíz aproximada: ' + ultimo.raiz.toFixed(10);
+            texto += '\nIteraciones: ' + resultados.length;
+            
+        } else if (metodoActual === 'secante') {
+            resultados = metodoSecante(funcionTexto, a, b);
+            
+            texto = 'Método de la Secante:\n\n';
+            texto += 'Iter\tx0\t\tx1\t\tx2\t\tf(x2)\n';
+            texto += '-'.repeat(60) + '\n';
+            
+            for (let i = 0; i < resultados.length; i++) {
+                const r = resultados[i];
+                texto += r.iteracion + '\t' + r.x0.toFixed(6) + '\t' + 
+                        r.x1.toFixed(6) + '\t' + r.x2.toFixed(6) + '\t' + 
+                        r.fx2.toFixed(8) + '\n';
+            }
+            
+            const ultimo = resultados[resultados.length - 1];
+            texto += '\nRaíz aproximada: ' + ultimo.x2.toFixed(10);
+            texto += '\nIteraciones: ' + resultados.length;
+        }
+        
+        mostrarResultado(texto);
+        
+    } catch (error) {
+        if (error.message === "No hay cambio de signo en el intervalo") {
+            mostrarResultado('❌ No hay cambio de signo en [a,b].\n💡 Prueba otro intervalo o usa "Secante" si tienes puntos cercanos a la raíz.', true);
+        } else if (error.message === "División por cero en el método") {
+            mostrarResultado('❌ División por cero en Secante.\n💡 Usa "Bisección" con intervalo que tenga cambio de signo.', true);
+        } else {
+            mostrarResultado('❌ Error: ' + error.message, true);
+        }
+    }
+}
+
+function resolverSistemaNoLineal() {
+    try {
+        const textoEcuaciones = document.getElementById('equations').value;
+        const textoInicial = document.getElementById('initial').value;
+        
+        const lineasEcuaciones = textoEcuaciones.trim().split('\n');
+        const ecuacionesLimpias = [];
+        for (let i = 0; i < lineasEcuaciones.length; i++) {
+            const linea = lineasEcuaciones[i].trim();
+            if (linea.length > 0) {
+                ecuacionesLimpias.push(linea);
+            }
+        }
+        
+        const inicial = convertirTextoAVector(textoInicial);
+        
+        if (ecuacionesLimpias.length !== inicial.length) {
+            mostrarResultado('❌ Error: El número de ecuaciones debe igualar el número de variables.\nTienes ' + ecuacionesLimpias.length + ' ecuaciones y ' + inicial.length + ' variables.', true);
+            return;
+        }
+        
+        const ecuacionesProcesadas = [];
+        for (let i = 0; i < ecuacionesLimpias.length; i++) {
+            ecuacionesProcesadas.push(preprocesarEcuacion(ecuacionesLimpias[i], inicial.length));
+        }
+        
+        const resultado = metodoNewton(ecuacionesProcesadas, inicial);
+        
+        const vars = ['x', 'y', 'z', 'w', 'u'];
+        let texto = 'Solución (Método de Newton):\n\n';
+        for (let i = 0; i < resultado.solucion.length; i++) {
+            texto += vars[i] + ' = ' + resultado.solucion[i].toFixed(10) + '\n';
+        }
+        texto += '\nIteraciones: ' + resultado.iteraciones;
+        
+        mostrarResultado(texto);
+        
+        if (inicial.length === 2) {
+            document.getElementById('plotSection').style.display = 'block';
+            setTimeout(function() {
+                graficarSistema(ecuacionesProcesadas, resultado.solucion);
+            }, 100);
+        }
+        
+    } catch (error) {
+        mostrarResultado('❌ Error: ' + error.message + '\n💡 Verifica las ecuaciones y el punto inicial.', true);
+    }
+}
+
+function resolverPuntoFijo() {
+    try {
+        const textoFunciones = document.getElementById('equations').value;
+        const textoInicial = document.getElementById('initial').value;
+        
+        const lineasFunciones = textoFunciones.trim().split('\n');
+        const funcionesLimpias = [];
+        for (let i = 0; i < lineasFunciones.length; i++) {
+            const linea = lineasFunciones[i].trim();
+            if (linea.length > 0) {
+                funcionesLimpias.push(linea);
+            }
+        }
+        
+        const inicial = convertirTextoAVector(textoInicial);
+        
+        if (funcionesLimpias.length !== inicial.length) {
+            mostrarResultado('❌ Error: El número de funciones debe igualar el número de variables.\nTienes ' + funcionesLimpias.length + ' funciones y ' + inicial.length + ' variables.', true);
+            return;
+        }
+        
+        const funcionesProcesadas = [];
+        for (let i = 0; i < funcionesLimpias.length; i++) {
+            funcionesProcesadas.push(preprocesarEcuacion(funcionesLimpias[i], inicial.length));
+        }
+        
+        const resultado = metodoPuntoFijo(funcionesProcesadas, inicial);
+        
+        const vars = ['x', 'y', 'z', 'w', 'u'];
+        let texto = 'Solución (Método de Punto Fijo):\n\n';
+        for (let i = 0; i < resultado.solucion.length; i++) {
+            texto += vars[i] + ' = ' + resultado.solucion[i].toFixed(10) + '\n';
+        }
+        texto += '\nIteraciones: ' + resultado.iteraciones;
+        
+        if (resultado.iteraciones > 50) {
+            texto += '\n\n💡 Convergencia lenta. Prueba "Ec. No Lineales" (Newton) para más velocidad.';
+        }
+        
+        mostrarResultado(texto);
+        
+    } catch (error) {
+        if (error.message === "El método diverge") {
+            mostrarResultado('❌ El método diverge.\n💡 Reformula las ecuaciones o usa "Ec. No Lineales" (Newton) que es más robusto.', true);
+        } else if (error.message.includes("No convergió")) {
+            mostrarResultado('❌ No convergió en 100 iteraciones.\n💡 Usa "Ec. No Lineales" (Newton) que converge más rápido.', true);
+        } else {
+            mostrarResultado('❌ Error: ' + error.message, true);
+        }
+    }
+}
+
+function resolverNewtonModificado() {
+    try {
+        const textoEcuaciones = document.getElementById('equations').value;
+        const textoInicial = document.getElementById('initial').value;
+        
+        const lineasEcuaciones = textoEcuaciones.trim().split('\n');
+        const ecuacionesLimpias = [];
+        for (let i = 0; i < lineasEcuaciones.length; i++) {
+            const linea = lineasEcuaciones[i].trim();
+            if (linea.length > 0) {
+                ecuacionesLimpias.push(linea);
+            }
+        }
+        
+        const inicial = convertirTextoAVector(textoInicial);
+        
+        if (ecuacionesLimpias.length !== inicial.length) {
+            mostrarResultado('❌ Error: El número de ecuaciones debe igualar el número de variables.', true);
+            return;
+        }
+        
+        const ecuacionesProcesadas = [];
+        for (let i = 0; i < ecuacionesLimpias.length; i++) {
+            ecuacionesProcesadas.push(preprocesarEcuacion(ecuacionesLimpias[i], inicial.length));
+        }
+        
+        const resultado = metodoNewtonModificado(ecuacionesProcesadas, inicial);
+        
+        const vars = ['x', 'y', 'z', 'w', 'u'];
+        let texto = 'Solución (Newton Modificado):\n\n';
+        for (let i = 0; i < resultado.solucion.length; i++) {
+            texto += vars[i] + ' = ' + resultado.solucion[i].toFixed(10) + '\n';
+        }
+        texto += '\nIteraciones: ' + resultado.iteraciones;
+        texto += '\n\n💡 Jacobiano calculado solo en x₀';
+        
+        mostrarResultado(texto);
+        
+    } catch (error) {
+        mostrarResultado('❌ Error: ' + error.message + '\n💡 Prueba "Ec. No Lineales" (Newton completo) si no converge.', true);
+    }
+}
+
+// ========================================
+// CREAR INTERFAZ
+// ========================================
+
+function crearInterfazEntrada(metodo) {
+    const seccion = document.getElementById('inputSection');
+    let html = '';
+    
+    if (metodo === 'suma' || metodo === 'multiplicacion') {
+        html = `
+            <div class="input-group">
+                <label>Matriz A:</label>
+                <textarea id="matrixA" placeholder="Ejemplo:&#10;1 2&#10;3 4"></textarea>
+                <div class="help-text">Separar elementos con espacios, filas con Enter</div>
+            </div>
+            <div class="input-group">
+                <label>Matriz B:</label>
+                <textarea id="matrixB" placeholder="Ejemplo:&#10;5 6&#10;7 8"></textarea>
+            </div>
+            <button class="solve-btn" onclick="resolverOperacionMatrices()">Calcular</button>
+        `;
+        
+    } else if (metodo === 'determinante' || metodo === 'inversa') {
+        html = `
+            <div class="input-group">
+                <label>Matriz (debe ser cuadrada):</label>
+                <textarea id="matrix" placeholder="Ejemplo:&#10;4 2&#10;3 1"></textarea>
+                <div class="help-text">Separar elementos con espacios, filas con Enter</div>
+            </div>
+            <button class="solve-btn" onclick="resolverOperacionMatrizUnica()">Calcular</button>
+        `;
+        
+    } else if (metodo === 'gauss' || metodo === 'gauss-jordan' || 
+                metodo === 'jacobi' || metodo === 'gauss-seidel') {
+        html = `
+            <div class="input-group">
+                <label>Matriz de coeficientes A:</label>
+                <textarea id="matrixA" placeholder="Ejemplo:&#10;2 3&#10;1 -1"></textarea>
+                <div class="help-text">Sistema Ax = b</div>
+            </div>
+            <div class="input-group">
+                <label>Vector de términos independientes b:</label>
+                <input type="text" id="vectorB" placeholder="Ejemplo: 8 1">
+                <div class="help-text">Separar valores con espacios</div>
+            </div>
+            <button class="solve-btn" onclick="resolverSistemaLineal()">Resolver</button>
+        `;
+        
+    } else if (metodo === 'biseccion' || metodo === 'secante') {
+        html = `
+            <div class="input-group">
+                <label>Función f(x) = 0:</label>
+                <input type="text" id="function" placeholder="Ejemplo: x**3 - x - 2">
+                <div class="help-text">Usar: sen(), cos(), ln(), exp(), raiz(), ** para potencias</div>
+            </div>
+            <div class="input-group">
+                <label>Intervalo [a, b]:</label>
+                <input type="text" id="interval" placeholder="Ejemplo: 1 2">
+                <div class="help-text">Dos valores separados por espacio</div>
+            </div>
+            <button class="solve-btn" onclick="resolverEcuacionNoLineal()">Resolver</button>
+        `;
+        
+    } else if (metodo === 'no-lineal') {
+        html = `
+            <div class="input-group">
+                <label>Ecuaciones (f(x,y,...) = 0):</label>
+                <textarea id="equations" placeholder="Ejemplo:&#10;x**2 + y**2 - 4&#10;exp(x) + y - 1"></textarea>
+                <div class="help-text">Una ecuación por línea. Variables: x, y, z. Funciones: sen(), cos(), ln(), exp(), raiz()</div>
+            </div>
+            <div class="input-group">
+                <label>Punto inicial:</label>
+                <input type="text" id="initial" placeholder="Ejemplo: 0.5 0.5">
+                <div class="help-text">Valores iniciales separados por espacios</div>
+            </div>
+            <button class="solve-btn" onclick="resolverSistemaNoLineal()">Resolver</button>
+        `;
+        
+    } else if (metodo === 'punto-fijo') {
+        html = `
+            <div class="input-group">
+                <label>Funciones g(x, y, ...):</label>
+                <textarea id="equations" placeholder="Ejemplo:&#10;cos(y)&#10;sen(x)"></textarea>
+                <div class="help-text">Sistema x = g(x). Una función por línea</div>
+            </div>
+            <div class="input-group">
+                <label>Punto inicial:</label>
+                <input type="text" id="initial" placeholder="Ejemplo: 0.5 0.5">
+                <div class="help-text">Valores iniciales separados por espacios</div>
+            </div>
+            <button class="solve-btn" onclick="resolverPuntoFijo()">Resolver</button>
+        `;
+        
+    } else if (metodo === 'newton-mod') {
+        html = `
+            <div class="input-group">
+                <label>Ecuaciones (f(x,y,...) = 0):</label>
+                <textarea id="equations" placeholder="Ejemplo:&#10;x**2 + y + z - 4&#10;y**2 + z + x - 5"></textarea>
+                <div class="help-text">Jacobiano calculado solo en x₀</div>
+            </div>
+            <div class="input-group">
+                <label>Punto inicial:</label>
+                <input type="text" id="initial" placeholder="Ejemplo: 1 1 1">
+                <div class="help-text">Valores iniciales separados por espacios</div>
+            </div>
+            <button class="solve-btn" onclick="resolverNewtonModificado()">Resolver</button>
+        `;
+    }
+    
+    seccion.innerHTML = html;
+}
+
+// ========================================
+// INICIALIZACIÓN
+// ========================================
+
+const botones = document.querySelectorAll('.method-btn');
+
+for (let i = 0; i < botones.length; i++) {
+    botones[i].addEventListener('click', function() {
+        for (let j = 0; j < botones.length; j++) {
+            botones[j].classList.remove('active');
+        }
+        
         this.classList.add('active');
-        currentMethod = this.dataset.method;
-        createInputUI(currentMethod);
+        metodoActual = this.getAttribute('data-method');
+        crearInterfazEntrada(metodoActual);
         document.getElementById('resultSection').classList.remove('show');
         document.getElementById('plotSection').style.display = 'none';
     });
-});
+}
 
-document.querySelector('.method-btn').click();
+botones[0].click();
