@@ -632,6 +632,7 @@ function metodoPuntoFijo(funcionesG, inicial) {
     }
     
     let iteracion = 0;
+    const historial = [];
     
     for (iteracion = 0; iteracion < maxIter; iteracion++) {
         const vNuevo = [];
@@ -655,7 +656,13 @@ function metodoPuntoFijo(funcionesG, inicial) {
                 maxError = error;
             }
         }
-        
+
+        historial.push({
+            iteracion: iteracion + 1,
+            valores: vNuevo.slice(),
+            error: maxError
+        });
+     
         v = vNuevo;
         
         if (maxError < tolerancia) {
@@ -667,7 +674,7 @@ function metodoPuntoFijo(funcionesG, inicial) {
         throw new Error("No convergió en " + maxIter + " iteraciones");
     }
     
-    return { solucion: v, iteraciones: iteracion + 1 };
+    return { solucion: v, iteraciones: iteracion + 1, historial: historial };
 }
 
 function metodoNewtonModificado(ecuaciones, inicial) {
@@ -709,6 +716,7 @@ function metodoNewtonModificado(ecuaciones, inicial) {
     }
     
     let iteracion = 0;
+    const historial = [];
     
     for (iteracion = 0; iteracion < maxIter; iteracion++) {
         const fv = [];
@@ -733,13 +741,19 @@ function metodoNewtonModificado(ecuaciones, inicial) {
                 maxDelta = Math.abs(delta[i]);
             }
         }
+
+        historial.push({
+            iteracion: iteracion + 1,
+            valores: v.slice(),
+            error: maxDelta
+        });
         
         if (maxDelta < tolerancia) {
             break;
         }
     }
     
-    return { solucion: v, iteraciones: iteracion + 1 };
+    return { solucion: v, iteraciones: iteracion + 1, historial: historial };
 }
 
 // ========================================
@@ -1257,6 +1271,19 @@ function resolverPuntoFijo() {
             texto += vars[i] + ' = ' + resultado.solucion[i].toFixed(10) + '\n';
         }
         texto += '\nIteraciones: ' + resultado.iteraciones;
+
+        if (resultado.historial.length > 0) {
+            texto += '\n\n--- Últimas 5 Iteraciones ---\n';
+            const inicio = Math.max(0, resultado.historial.length - 5);
+            for (let i = inicio; i < resultado.historial.length; i++) {
+                const iter = resultado.historial[i];
+                texto += '\nIteración ' + iter.iteracion + ':\n';
+                for (let j = 0; j < iter.valores.length; j++) {
+                    texto += '  ' + vars[j] + ' = ' + iter.valores[j].toFixed(10) + '\n';
+                }
+                texto += '  Error = ' + iter.error.toExponential(4) + '\n';
+            }
+        }
         
         if (resultado.iteraciones > 50) {
             texto += '\n\n💡 Convergencia lenta. Prueba "Ec. No Lineales" (Newton) para más velocidad.';
@@ -1310,7 +1337,19 @@ function resolverNewtonModificado() {
         }
         texto += '\nIteraciones: ' + resultado.iteraciones;
         texto += '\n\n💡 Jacobiano calculado solo en x₀';
-        
+
+        if (resultado.historial.length > 0) {
+            texto += '\n\n--- Últimas 5 Iteraciones ---\n';
+            const inicio = Math.max(0, resultado.historial.length - 5);
+            for (let i = inicio; i < resultado.historial.length; i++) {
+                const iter = resultado.historial[i];
+                texto += '\nIteración ' + iter.iteracion + ':\n';
+                for (let j = 0; j < iter.valores.length; j++) {
+                    texto += '  ' + vars[j] + ' = ' + iter.valores[j].toFixed(10) + '\n';
+                }
+                texto += '  Error = ' + iter.error.toExponential(4) + '\n';
+            }
+        }
         mostrarResultado(texto);
         
     } catch (error) {
@@ -1451,3 +1490,4 @@ for (let i = 0; i < botones.length; i++) {
 }
 
 botones[0].click();
+
