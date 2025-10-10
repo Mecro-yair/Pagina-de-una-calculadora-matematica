@@ -1275,29 +1275,39 @@ function resolverPuntoFijo() {
         if (resultado.historial.length > 0) {
             texto += '\n\n--- Últimas 5 Iteraciones ---\n';
             const inicio = Math.max(0, resultado.historial.length - 5);
+            
+            // Encabezado de la tabla
+            texto += 'iter\t';
+            for (let j = 0; j < resultado.solucion.length; j++) {
+                texto += vars[j] + '\t\t';
+            }
+            texto += 'error\n';
+            texto += '-'.repeat(80) + '\n';
+            
+            // Filas de datos
             for (let i = inicio; i < resultado.historial.length; i++) {
                 const iter = resultado.historial[i];
-                texto += '\nIteración ' + iter.iteracion + ':\n';
+                texto += iter.iteracion + '\t';
                 for (let j = 0; j < iter.valores.length; j++) {
-                    texto += '  ' + vars[j] + ' = ' + iter.valores[j].toFixed(10) + '\n';
+                    texto += iter.valores[j].toFixed(7) + '\t';
                 }
-                texto += '  Error = ' + iter.error.toExponential(4) + '\n';
+                texto += iter.error.toExponential(4) + '\n';
             }
         }
         
         if (resultado.iteraciones > 50) {
-            texto += '\n\n💡 Convergencia lenta. Prueba "Ec. No Lineales" (Newton) para más velocidad.';
+            texto += '\n\n Convergencia lenta. Prueba "Ec. No Lineales" (Newton) para más velocidad.';
         }
         
         mostrarResultado(texto);
         
     } catch (error) {
         if (error.message === "El método diverge") {
-            mostrarResultado('❌ El método diverge.\n💡 Reformula las ecuaciones o usa "Ec. No Lineales" (Newton) que es más robusto.', true);
+            mostrarResultado(' El método diverge.\n💡 Reformula las ecuaciones o usa "Ec. No Lineales" (Newton) que es más robusto.', true);
         } else if (error.message.includes("No convergió")) {
-            mostrarResultado('❌ No convergió en 100 iteraciones.\n💡 Usa "Ec. No Lineales" (Newton) que converge más rápido.', true);
+            mostrarResultado(' No convergió en 100 iteraciones.\n💡 Usa "Ec. No Lineales" (Newton) que converge más rápido.', true);
         } else {
-            mostrarResultado('❌ Error: ' + error.message, true);
+            mostrarResultado(' Error: ' + error.message, true);
         }
     }
 }
@@ -1319,7 +1329,7 @@ function resolverNewtonModificado() {
         const inicial = convertirTextoAVector(textoInicial);
         
         if (ecuacionesLimpias.length !== inicial.length) {
-            mostrarResultado('❌ Error: El número de ecuaciones debe igualar el número de variables.', true);
+            mostrarResultado(' Error: El número de ecuaciones debe igualar el número de variables.', true);
             return;
         }
         
@@ -1336,18 +1346,28 @@ function resolverNewtonModificado() {
             texto += vars[i] + ' = ' + resultado.solucion[i].toFixed(10) + '\n';
         }
         texto += '\nIteraciones: ' + resultado.iteraciones;
-        texto += '\n\n💡 Jacobiano calculado solo en x₀';
+        texto += '\n\n Jacobiano calculado solo en x₀';
 
         if (resultado.historial.length > 0) {
             texto += '\n\n--- Últimas 5 Iteraciones ---\n';
             const inicio = Math.max(0, resultado.historial.length - 5);
+            
+            // Encabezado de la tabla
+            texto += 'iter\t';
+            for (let j = 0; j < resultado.solucion.length; j++) {
+                texto += vars[j] + '\t\t';
+            }
+            texto += 'error\n';
+            texto += '-'.repeat(80) + '\n';
+            
+            // Filas de datos
             for (let i = inicio; i < resultado.historial.length; i++) {
                 const iter = resultado.historial[i];
-                texto += '\nIteración ' + iter.iteracion + ':\n';
+                texto += iter.iteracion + '\t';
                 for (let j = 0; j < iter.valores.length; j++) {
-                    texto += '  ' + vars[j] + ' = ' + iter.valores[j].toFixed(10) + '\n';
+                    texto += iter.valores[j].toFixed(7) + '\t';
                 }
-                texto += '  Error = ' + iter.error.toExponential(4) + '\n';
+                texto += iter.error.toExponential(4) + '\n';
             }
         }
         mostrarResultado(texto);
@@ -1490,4 +1510,5 @@ for (let i = 0; i < botones.length; i++) {
 }
 
 botones[0].click();
+
 
