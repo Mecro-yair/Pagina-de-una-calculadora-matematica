@@ -1,3 +1,4 @@
+
 // ========================================
 // VARIABLES GLOBALES
 // ========================================
@@ -760,6 +761,319 @@ function metodoNewtonModificado(ecuaciones, inicial) {
 // FUNCIONES DE GRAFICACIÓN
 // ========================================
 
+function graficarFuncionUnaVariable(funcionTexto, raiz, intervalo) {
+    const canvas = document.getElementById('plotCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    ctx.fillStyle = '#1e1e2e';
+    ctx.fillRect(0, 0, w, h);
+    
+    const f = function(x) {
+        try {
+            return eval(funcionTexto);
+        } catch(e) {
+            return NaN;
+        }
+    };
+    
+    // Determinar rango
+    let xMin, xMax;
+    if (intervalo) {
+        const rango = intervalo[1] - intervalo[0];
+        xMin = intervalo[0] - rango * 0.2;
+        xMax = intervalo[1] + rango * 0.2;
+    } else {
+        xMin = raiz - 5;
+        xMax = raiz + 5;
+    }
+    
+    // Calcular yMin y yMax
+    const puntos = 200;
+    let yMin = Infinity;
+    let yMax = -Infinity;
+    for (let i = 0; i <= puntos; i++) {
+        const x = xMin + (xMax - xMin) * i / puntos;
+        const y = f(x);
+        if (isFinite(y)) {
+            yMin = Math.min(yMin, y);
+            yMax = Math.max(yMax, y);
+        }
+    }
+    
+    const rangoY = yMax - yMin;
+    yMin -= rangoY * 0.1;
+    yMax += rangoY * 0.1;
+    
+    function toPixelX(x) {
+        return ((x - xMin) / (xMax - xMin)) * w;
+    }
+    
+    function toPixelY(y) {
+        return h - ((y - yMin) / (yMax - yMin)) * h;
+    }
+    
+    // Dibujar cuadrícula
+    ctx.strokeStyle = '#2a2a3e';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 20; i++) {
+        ctx.beginPath();
+        ctx.moveTo(toPixelX(xMin + (xMax - xMin) * i / 20), 0);
+        ctx.lineTo(toPixelX(xMin + (xMax - xMin) * i / 20), h);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(0, toPixelY(yMin + (yMax - yMin) * i / 20));
+        ctx.lineTo(w, toPixelY(yMin + (yMax - yMin) * i / 20));
+        ctx.stroke();
+    }
+    
+    // Dibujar ejes
+    ctx.strokeStyle = '#4a4a5e';
+    ctx.lineWidth = 2;
+    if (yMin <= 0 && yMax >= 0) {
+        ctx.beginPath();
+        ctx.moveTo(0, toPixelY(0));
+        ctx.lineTo(w, toPixelY(0));
+        ctx.stroke();
+    }
+    if (xMin <= 0 && xMax >= 0) {
+        ctx.beginPath();
+        ctx.moveTo(toPixelX(0), 0);
+        ctx.lineTo(toPixelX(0), h);
+        ctx.stroke();
+    }
+    
+    // Dibujar función
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    let primerPunto = true;
+    for (let i = 0; i <= puntos; i++) {
+        const x = xMin + (xMax - xMin) * i / puntos;
+        const y = f(x);
+        
+        if (isFinite(y) && y >= yMin && y <= yMax) {
+            const px = toPixelX(x);
+            const py = toPixelY(y);
+            
+            if (primerPunto) {
+                ctx.moveTo(px, py);
+                primerPunto = false;
+            } else {
+                ctx.lineTo(px, py);
+            }
+        } else {
+            primerPunto = true;
+        }
+    }
+    ctx.stroke();
+    
+    // Dibujar raíz
+    ctx.shadowColor = 'rgba(248, 113, 113, 0.8)';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = '#f87171';
+    ctx.beginPath();
+    ctx.arc(toPixelX(raiz), toPixelY(0), 8, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#1e1e2e';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Etiqueta de raíz
+    ctx.fillStyle = 'rgba(30, 30, 46, 0.9)';
+    ctx.strokeStyle = '#f87171';
+    ctx.lineWidth = 2;
+    const etiqueta = 'x = ' + raiz.toFixed(6);
+    ctx.font = 'bold 12px Arial';
+    const anchoEtiqueta = ctx.measureText(etiqueta).width + 16;
+    const etiquetaX = toPixelX(raiz) + 15;
+    const etiquetaY = toPixelY(0) - 20;
+    ctx.fillRect(etiquetaX - 8, etiquetaY - 16, anchoEtiqueta, 24);
+    ctx.strokeRect(etiquetaX - 8, etiquetaY - 16, anchoEtiqueta, 24);
+    ctx.fillStyle = '#fca5a5';
+    ctx.textAlign = 'left';
+    ctx.fillText(etiqueta, etiquetaX, etiquetaY);
+    
+    // Leyenda
+    const leyendaX = 15;
+    const leyendaY = 15;
+    ctx.fillStyle = 'rgba(30, 30, 46, 0.95)';
+    ctx.strokeStyle = '#3d3d54';
+    ctx.lineWidth = 2;
+    ctx.fillRect(leyendaX - 5, leyendaY - 5, 100, 50);
+    ctx.strokeRect(leyendaX - 5, leyendaY - 5, 100, 50);
+    
+    ctx.font = 'bold 13px Arial';
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(leyendaX, leyendaY + 5);
+    ctx.lineTo(leyendaX + 25, leyendaY + 5);
+    ctx.stroke();
+    ctx.fillStyle = '#e5e5e5';
+    ctx.textAlign = 'left';
+    ctx.fillText('f(x)', leyendaX + 35, leyendaY + 9);
+    
+    ctx.fillStyle = '#f87171';
+    ctx.beginPath();
+    ctx.arc(leyendaX + 12, leyendaY + 31, 6, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#e5e5e5';
+    ctx.fillText('Raíz', leyendaX + 35, leyendaY + 35);
+}
+
+function graficarSistemaLineal(matrizA, vectorB, solucion) {
+    const canvas = document.getElementById('plotCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    ctx.fillStyle = '#1e1e2e';
+    ctx.fillRect(0, 0, w, h);
+    
+    const solX = solucion[0];
+    const solY = solucion[1];
+    const rango = Math.max(5, Math.abs(solX) + 3, Math.abs(solY) + 3);
+    const xMin = solX - rango;
+    const xMax = solX + rango;
+    const yMin = solY - rango;
+    const yMax = solY + rango;
+    
+    function toPixelX(x) {
+        return ((x - xMin) / (xMax - xMin)) * w;
+    }
+    
+    function toPixelY(y) {
+        return h - ((y - yMin) / (yMax - yMin)) * h;
+    }
+    
+    // Dibujar cuadrícula
+    ctx.strokeStyle = '#2a2a3e';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 20; i++) {
+        ctx.beginPath();
+        ctx.moveTo(toPixelX(xMin + (xMax - xMin) * i / 20), 0);
+        ctx.lineTo(toPixelX(xMin + (xMax - xMin) * i / 20), h);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(0, toPixelY(yMin + (yMax - yMin) * i / 20));
+        ctx.lineTo(w, toPixelY(yMin + (yMax - yMin) * i / 20));
+        ctx.stroke();
+    }
+    
+    // Dibujar ejes
+    ctx.strokeStyle = '#4a4a5e';
+    ctx.lineWidth = 2;
+    if (yMin <= 0 && yMax >= 0) {
+        ctx.beginPath();
+        ctx.moveTo(0, toPixelY(0));
+        ctx.lineTo(w, toPixelY(0));
+        ctx.stroke();
+    }
+    if (xMin <= 0 && xMax >= 0) {
+        ctx.beginPath();
+        ctx.moveTo(toPixelX(0), 0);
+        ctx.lineTo(toPixelX(0), h);
+        ctx.stroke();
+    }
+    
+    // Dibujar líneas (a₁x + a₂y = b)
+    const colores = ['#f87171', '#60a5fa'];
+    
+    for (let i = 0; i < matrizA.length; i++) {
+        const a1 = matrizA[i][0];
+        const a2 = matrizA[i][1];
+        const b = vectorB[i];
+        
+        ctx.strokeStyle = colores[i % colores.length];
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        if (Math.abs(a2) > 0.0001) {
+            // y = (b - a1*x) / a2
+            const y1 = (b - a1 * xMin) / a2;
+            const y2 = (b - a1 * xMax) / a2;
+            ctx.moveTo(toPixelX(xMin), toPixelY(y1));
+            ctx.lineTo(toPixelX(xMax), toPixelY(y2));
+        } else if (Math.abs(a1) > 0.0001) {
+            // x = b / a1 (línea vertical)
+            const x = b / a1;
+            ctx.moveTo(toPixelX(x), toPixelY(yMin));
+            ctx.lineTo(toPixelX(x), toPixelY(yMax));
+        }
+        
+        ctx.stroke();
+    }
+    
+    // Dibujar solución
+    ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = '#a855f7';
+    ctx.beginPath();
+    ctx.arc(toPixelX(solX), toPixelY(solY), 10, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#1e1e2e';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    
+    // Etiqueta de solución
+    ctx.fillStyle = 'rgba(30, 30, 46, 0.9)';
+    ctx.strokeStyle = '#a855f7';
+    ctx.lineWidth = 2;
+    const etiqueta = '(' + solX.toFixed(3) + ', ' + solY.toFixed(3) + ')';
+    ctx.font = 'bold 12px Arial';
+    const anchoEtiqueta = ctx.measureText(etiqueta).width + 16;
+    const etiquetaX = toPixelX(solX) + 15;
+    const etiquetaY = toPixelY(solY) - 20;
+    ctx.fillRect(etiquetaX - 8, etiquetaY - 16, anchoEtiqueta, 24);
+    ctx.strokeRect(etiquetaX - 8, etiquetaY - 16, anchoEtiqueta, 24);
+    ctx.fillStyle = '#c4b5fd';
+    ctx.textAlign = 'left';
+    ctx.fillText(etiqueta, etiquetaX, etiquetaY);
+    
+    // Leyenda
+    const leyendaX = 15;
+    const leyendaY = 15;
+    const alturaLeyenda = 30 + matrizA.length * 25;
+    ctx.fillStyle = 'rgba(30, 30, 46, 0.95)';
+    ctx.strokeStyle = '#3d3d54';
+    ctx.lineWidth = 2;
+    ctx.fillRect(leyendaX - 5, leyendaY - 5, 140, alturaLeyenda);
+    ctx.strokeRect(leyendaX - 5, leyendaY - 5, 140, alturaLeyenda);
+    
+    ctx.font = 'bold 13px Arial';
+    
+    for (let i = 0; i < matrizA.length; i++) {
+        ctx.strokeStyle = colores[i % colores.length];
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        const yPos = leyendaY + 5 + i * 25;
+        ctx.moveTo(leyendaX, yPos);
+        ctx.lineTo(leyendaX + 25, yPos);
+        ctx.stroke();
+        ctx.fillStyle = '#e5e5e5';
+        ctx.textAlign = 'left';
+        ctx.fillText('Ecuación ' + (i + 1), leyendaX + 35, yPos + 4);
+    }
+    
+    const yPosSol = leyendaY + 5 + matrizA.length * 25;
+    ctx.fillStyle = '#a855f7';
+    ctx.beginPath();
+    ctx.arc(leyendaX + 12, yPosSol, 6, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#e5e5e5';
+    ctx.fillText('Solución', leyendaX + 35, yPosSol + 4);
+}
+
 function graficarSistema(ecuaciones, solucion) {
     const canvas = document.getElementById('plotCanvas');
     if (!canvas) return;
@@ -989,7 +1303,7 @@ function resolverOperacionMatrices() {
         
         if (metodoActual === 'suma') {
             if (matrizA.length !== matrizB.length || matrizA[0].length !== matrizB[0].length) {
-                mostrarResultado('❌ Error: Las matrices deben tener las mismas dimensiones para sumar.\n💡 Para multiplicar, las columnas de A deben igualar las filas de B.', true);
+                mostrarResultado('⌠Error: Las matrices deben tener las mismas dimensiones para sumar.\n💡 Para multiplicar, las columnas de A deben igualar las filas de B.', true);
                 return;
             }
             const resultado = sumarMatrices(matrizA, matrizB);
@@ -997,7 +1311,7 @@ function resolverOperacionMatrices() {
             
         } else if (metodoActual === 'multiplicacion') {
             if (matrizA[0].length !== matrizB.length) {
-                mostrarResultado('❌ Error: Para A×B, columnas de A (' + matrizA[0].length + ') deben igualar filas de B (' + matrizB.length + ').\n💡 Verifica las dimensiones o prueba B×A.', true);
+                mostrarResultado('⌠Error: Para A×B, columnas de A (' + matrizA[0].length + ') deben igualar filas de B (' + matrizB.length + ').\n💡 Verifica las dimensiones o prueba B×A.', true);
                 return;
             }
             const resultado = multiplicarMatrices(matrizA, matrizB);
@@ -1005,7 +1319,7 @@ function resolverOperacionMatrices() {
         }
         
     } catch (error) {
-        mostrarResultado('❌ Error: ' + error.message, true);
+        mostrarResultado('⌠Error: ' + error.message, true);
     }
 }
 
@@ -1015,7 +1329,7 @@ function resolverOperacionMatrizUnica() {
         const matriz = convertirTextoAMatriz(texto);
         
         if (matriz.length !== matriz[0].length) {
-            mostrarResultado('❌ Error: La matriz debe ser cuadrada (n×n).\nIngresa una matriz con igual cantidad de filas y columnas.', true);
+            mostrarResultado('⌠Error: La matriz debe ser cuadrada (n×n).\nIngresa una matriz con igual cantidad de filas y columnas.', true);
             return;
         }
         
@@ -1026,7 +1340,7 @@ function resolverOperacionMatrizUnica() {
         } else if (metodoActual === 'inversa') {
             const det = calcularDeterminante(matriz);
             if (Math.abs(det) < 0.0000000001) {
-                mostrarResultado('❌ Matriz singular: No tiene inversa (det ≈ 0).\n💡 Para sistemas lineales Ax=b, usa "Gauss" o "Gauss-Jordan".', true);
+                mostrarResultado('⌠Matriz singular: No tiene inversa (det ≈ 0).\n💡 Para sistemas lineales Ax=b, usa "Gauss" o "Gauss-Jordan".', true);
                 return;
             }
             const inversa = calcularInversa(matriz);
@@ -1034,7 +1348,7 @@ function resolverOperacionMatrizUnica() {
         }
         
     } catch (error) {
-        mostrarResultado('❌ Error: ' + error.message, true);
+        mostrarResultado('⌠Error: ' + error.message, true);
     }
 }
 
@@ -1047,12 +1361,12 @@ function resolverSistemaLineal() {
         const vectorB = convertirTextoAVector(textoB);
         
         if (matrizA.length !== vectorB.length) {
-            mostrarResultado('❌ Error: Dimensiones incompatibles.\nLa matriz A y el vector b deben tener el mismo número de filas.', true);
+            mostrarResultado('⌠Error: Dimensiones incompatibles.\nLa matriz A y el vector b deben tener el mismo número de filas.', true);
             return;
         }
         
         if (matrizA.length !== matrizA[0].length) {
-            mostrarResultado('❌ Error: La matriz debe ser cuadrada.\n💡 Para sistemas rectangulares, usa otros métodos especializados.', true);
+            mostrarResultado('⌠Error: La matriz debe ser cuadrada.\n💡 Para sistemas rectangulares, usa otros métodos especializados.', true);
             return;
         }
         
@@ -1071,7 +1385,7 @@ function resolverSistemaLineal() {
             resultado = metodoJacobi(matrizA, vectorB);
             
             if (hayDivergencia(resultado.solucion)) {
-                let mensaje = '❌ Método divergió ';
+                let mensaje = '⌠Método divergió ';
                 if (!esDiagonalmenteDominante(matrizA)) {
                     mensaje += '(matriz no diag. dominante)';
                 } else {
@@ -1087,12 +1401,13 @@ function resolverSistemaLineal() {
             if (resultado.iteraciones >= 100) {
                 texto += '\n\n⚠️ No convergió. Prueba "Gauss"';
             }
+            resultado = resultado.solucion;
             
         } else if (metodoActual === 'gauss-seidel') {
             resultado = metodoGaussSeidel(matrizA, vectorB);
             
             if (hayDivergencia(resultado.solucion)) {
-                let mensaje = '❌ Método divergió ';
+                let mensaje = '⌠Método divergió ';
                 if (!esDiagonalmenteDominante(matrizA)) {
                     mensaje += '(matriz no diag. dominante)';
                 } else {
@@ -1108,12 +1423,23 @@ function resolverSistemaLineal() {
             if (resultado.iteraciones >= 100) {
                 texto += '\n\n⚠️ No convergió. Prueba "Gauss"';
             }
+            resultado = resultado.solucion;
         }
         
         mostrarResultado(texto);
         
+        // Graficar si es un sistema de 2x2
+        if (matrizA.length === 2 && matrizA[0].length === 2) {
+            document.getElementById('plotSection').style.display = 'block';
+            document.getElementById('plotTitle').textContent = 'Gráfica del Sistema Lineal';
+            document.getElementById('plotSubtitle').textContent = 'Representación gráfica de las ecuaciones y su punto de intersección';
+            setTimeout(function() {
+                graficarSistemaLineal(matrizA, vectorB, resultado);
+            }, 100);
+        }
+        
     } catch (error) {
-        mostrarResultado('❌ Error: ' + error.message, true);
+        mostrarResultado('⌠Error: ' + error.message, true);
     }
 }
 
@@ -1122,6 +1448,7 @@ function resolverEcuacionNoLineal() {
         let funcionTexto = document.getElementById('function').value;
         const intervaloTexto = document.getElementById('interval').value;
         
+        const funcionOriginal = funcionTexto;
         funcionTexto = preprocesarFuncion(funcionTexto);
         
         const intervalo = convertirTextoAVector(intervaloTexto);
@@ -1156,6 +1483,16 @@ function resolverEcuacionNoLineal() {
             texto += '\nRaíz aproximada: ' + ultimo.raiz.toFixed(10);
             texto += '\nIteraciones: ' + resultados.length;
             
+            mostrarResultado(texto);
+            
+            // Graficar
+            document.getElementById('plotSection').style.display = 'block';
+            document.getElementById('plotTitle').textContent = 'Gráfica de f(x) = ' + funcionOriginal;
+            document.getElementById('plotSubtitle').textContent = 'Método de Bisección - Raíz encontrada en x = ' + ultimo.raiz.toFixed(6);
+            setTimeout(function() {
+                graficarFuncionUnaVariable(funcionTexto, ultimo.raiz, [a, b]);
+            }, 100);
+            
         } else if (metodoActual === 'secante') {
             resultados = metodoSecante(funcionTexto, a, b);
             
@@ -1173,18 +1510,27 @@ function resolverEcuacionNoLineal() {
             const ultimo = resultados[resultados.length - 1];
             texto += '\nRaíz aproximada: ' + ultimo.x2.toFixed(10);
             texto += '\nIteraciones: ' + resultados.length;
+            
+            mostrarResultado(texto);
+            
+            // Graficar
+            document.getElementById('plotSection').style.display = 'block';
+            document.getElementById('plotTitle').textContent = 'Gráfica de f(x) = ' + funcionOriginal;
+            document.getElementById('plotSubtitle').textContent = 'Método de la Secante - Raíz encontrada en x = ' + ultimo.x2.toFixed(6);
+            setTimeout(function() {
+                graficarFuncionUnaVariable(funcionTexto, ultimo.x2, null);
+            }, 100);
         }
-        
-        mostrarResultado(texto);
         
     } catch (error) {
         if (error.message === "No hay cambio de signo en el intervalo") {
-            mostrarResultado('❌ No hay cambio de signo en [a,b].\n💡 Prueba otro intervalo o usa "Secante" si tienes puntos cercanos a la raíz.', true);
+            mostrarResultado('⌠No hay cambio de signo en [a,b].\n💡 Prueba otro intervalo o usa "Secante" si tienes puntos cercanos a la raíz.', true);
         } else if (error.message === "División por cero en el método") {
-            mostrarResultado('❌ División por cero en Secante.\n💡 Usa "Bisección" con intervalo que tenga cambio de signo.', true);
+            mostrarResultado('⌠División por cero en Secante.\n💡 Usa "Bisección" con intervalo que tenga cambio de signo.', true);
         } else {
-            mostrarResultado('❌ Error: ' + error.message, true);
+            mostrarResultado('⌠Error: ' + error.message, true);
         }
+        document.getElementById('plotSection').style.display = 'none';
     }
 }
 
@@ -1205,7 +1551,7 @@ function resolverSistemaNoLineal() {
         const inicial = convertirTextoAVector(textoInicial);
         
         if (ecuacionesLimpias.length !== inicial.length) {
-            mostrarResultado('❌ Error: El número de ecuaciones debe igualar el número de variables.\nTienes ' + ecuacionesLimpias.length + ' ecuaciones y ' + inicial.length + ' variables.', true);
+            mostrarResultado('⌠Error: El número de ecuaciones debe igualar el número de variables.\nTienes ' + ecuacionesLimpias.length + ' ecuaciones y ' + inicial.length + ' variables.', true);
             return;
         }
         
@@ -1227,13 +1573,18 @@ function resolverSistemaNoLineal() {
         
         if (inicial.length === 2) {
             document.getElementById('plotSection').style.display = 'block';
+            document.getElementById('plotTitle').textContent = 'Gráfica del Sistema No Lineal (2 variables)';
+            document.getElementById('plotSubtitle').textContent = 'Las curvas representan cada ecuación igualada a cero';
             setTimeout(function() {
                 graficarSistema(ecuacionesProcesadas, resultado.solucion);
             }, 100);
+        } else {
+            document.getElementById('plotSection').style.display = 'none';
         }
         
     } catch (error) {
-        mostrarResultado('❌ Error: ' + error.message + '\n💡 Verifica las ecuaciones y el punto inicial.', true);
+        mostrarResultado('⌠Error: ' + error.message + '\n💡 Verifica las ecuaciones y el punto inicial.', true);
+        document.getElementById('plotSection').style.display = 'none';
     }
 }
 
@@ -1254,7 +1605,7 @@ function resolverPuntoFijo() {
         const inicial = convertirTextoAVector(textoInicial);
         
         if (funcionesLimpias.length !== inicial.length) {
-            mostrarResultado('❌ Error: El número de funciones debe igualar el número de variables.\nTienes ' + funcionesLimpias.length + ' funciones y ' + inicial.length + ' variables.', true);
+            mostrarResultado('⌠Error: El número de funciones debe igualar el número de variables.\nTienes ' + funcionesLimpias.length + ' funciones y ' + inicial.length + ' variables.', true);
             return;
         }
         
@@ -1296,19 +1647,37 @@ function resolverPuntoFijo() {
         }
         
         if (resultado.iteraciones > 50) {
-            texto += '\n\n Convergencia lenta. Prueba "Ec. No Lineales" (Newton) para más velocidad.';
+            texto += '\n\n⚠️ Convergencia lenta. Prueba "Ec. No Lineales" (Newton) para más velocidad.';
         }
         
         mostrarResultado(texto);
         
+        // Graficar si es de 2 variables (convertir g(x,y) a f(x,y) = g(x,y) - [x,y])
+        if (inicial.length === 2) {
+            const ecuacionesPuntoFijo = [];
+            for (let i = 0; i < funcionesProcesadas.length; i++) {
+                ecuacionesPuntoFijo.push('(' + funcionesProcesadas[i] + ') - v[' + i + ']');
+            }
+            
+            document.getElementById('plotSection').style.display = 'block';
+            document.getElementById('plotTitle').textContent = 'Gráfica del Sistema (Punto Fijo)';
+            document.getElementById('plotSubtitle').textContent = 'Método de Punto Fijo - Solución donde x = g(x)';
+            setTimeout(function() {
+                graficarSistema(ecuacionesPuntoFijo, resultado.solucion);
+            }, 100);
+        } else {
+            document.getElementById('plotSection').style.display = 'none';
+        }
+        
     } catch (error) {
         if (error.message === "El método diverge") {
-            mostrarResultado(' El método diverge.\n💡 Reformula las ecuaciones o usa "Ec. No Lineales" (Newton) que es más robusto.', true);
+            mostrarResultado('⌠El método diverge.\n💡 Reformula las ecuaciones o usa "Ec. No Lineales" (Newton) que es más robusto.', true);
         } else if (error.message.includes("No convergió")) {
-            mostrarResultado(' No convergió en 100 iteraciones.\n💡 Usa "Ec. No Lineales" (Newton) que converge más rápido.', true);
+            mostrarResultado('⌠No convergió en 100 iteraciones.\n💡 Usa "Ec. No Lineales" (Newton) que converge más rápido.', true);
         } else {
-            mostrarResultado(' Error: ' + error.message, true);
+            mostrarResultado('⌠Error: ' + error.message, true);
         }
+        document.getElementById('plotSection').style.display = 'none';
     }
 }
 
@@ -1329,7 +1698,7 @@ function resolverNewtonModificado() {
         const inicial = convertirTextoAVector(textoInicial);
         
         if (ecuacionesLimpias.length !== inicial.length) {
-            mostrarResultado(' Error: El número de ecuaciones debe igualar el número de variables.', true);
+            mostrarResultado('⌠Error: El número de ecuaciones debe igualar el número de variables.', true);
             return;
         }
         
@@ -1370,10 +1739,24 @@ function resolverNewtonModificado() {
                 texto += iter.error.toExponential(4) + '\n';
             }
         }
+        
         mostrarResultado(texto);
         
+        // Graficar si es de 2 variables
+        if (inicial.length === 2) {
+            document.getElementById('plotSection').style.display = 'block';
+            document.getElementById('plotTitle').textContent = 'Gráfica del Sistema (Newton Modificado)';
+            document.getElementById('plotSubtitle').textContent = 'Jacobiano fijo calculado en el punto inicial';
+            setTimeout(function() {
+                graficarSistema(ecuacionesProcesadas, resultado.solucion);
+            }, 100);
+        } else {
+            document.getElementById('plotSection').style.display = 'none';
+        }
+        
     } catch (error) {
-        mostrarResultado('❌ Error: ' + error.message + '\n💡 Prueba "Ec. No Lineales" (Newton completo) si no converge.', true);
+        mostrarResultado('⌠Error: ' + error.message + '\n Prueba "Ec. No Lineales" (Newton raphson) si no converge.', true);
+        document.getElementById('plotSection').style.display = 'none';
     }
 }
 
@@ -1512,6 +1895,7 @@ for (let i = 0; i < botones.length; i++) {
 }
 
 botones[0].click();
+
 
 
 
