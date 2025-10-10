@@ -12,7 +12,7 @@
         <!-- Encabezado -->
         <header>
             <h1>Trabajo de Modelado Computacional para Ingeniería</h1>
-            <p class="subtitle">MSc.Ing. Jorge R. Chambilla Araca</p>
+            <p class="subtitle">MSc.Ing. Jorge R. ChambillaAraca</p>
         </header>
 
         <!-- Contenido principal -->
@@ -45,16 +45,12 @@
 
             <!-- Sección de gráfica -->
             <div id="plotSection">
-                <div style="margin-top: 10px; font-size: 0.9em; color: #9ca3af; text-align: center;">Gráfica del Sistema (2 variables)</div>
+                <div id="plotTitle" style="margin-top: 10px; font-size: 0.9em; color: #9ca3af; text-align: center;">Gráfica</div>
                 <div style="display: flex; justify-content: center;">
                     <canvas id="plotCanvas" width="600" height="400"></canvas>
                 </div>
-                <div style="margin-top: 10px; font-size: 0.9em; color: #9ca3af; text-align: center;">
-                    La gráfica solo está disponible para sistemas de 2 ecuaciones con 2 variables (x, y)
-                </div>
+                <div id="plotSubtitle" style="margin-top: 10px; font-size: 0.9em; color: #9ca3af; text-align: center;"></div>
             </div>
-        </div>
-    </div>
 
     <!-- Botón de créditos -->
     <button class="credits-btn" onclick="mostrarOcultarCreditos()">Créditos</button>
@@ -80,6 +76,11 @@
     <script src="script.js"></script>
 </body>
 </html>
+
+
+
+
+
 
 
 
