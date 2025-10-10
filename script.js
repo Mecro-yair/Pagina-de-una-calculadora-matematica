@@ -1474,14 +1474,16 @@ function crearInterfazEntrada(metodo) {
         html = `
             <div class="input-group">
                 <label>Ecuaciones (f(x,y,...) = 0):</label>
-                <textarea id="equations" placeholder="Ejemplo:&#10;x**2 + y + z - 4&#10;y**2 + z + x - 5"></textarea>
+                <textarea id="equations" placeholder="Ejemplo:&#10;x**2 + y**2 - 4&#10;x - y"></textarea>
                 <div class="help-text">Jacobiano calculado solo en x₀</div>
             </div>
+        
             <div class="input-group">
                 <label>Punto inicial:</label>
-                <input type="text" id="initial" placeholder="Ejemplo: 1 1 1">
+                <input type="text" id="initial" placeholder="Ejemplo: 1 1">
                 <div class="help-text">Valores iniciales separados por espacios</div>
             </div>
+        
             <button class="solve-btn" onclick="resolverNewtonModificado()">Resolver</button>
         `;
     }
@@ -1510,5 +1512,6 @@ for (let i = 0; i < botones.length; i++) {
 }
 
 botones[0].click();
+
 
 
