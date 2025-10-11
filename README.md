@@ -11,7 +11,7 @@ No requiere instalación. Solo abre el link y empieza a usar.
 Descargar para Uso Offline
 Descarga directa:
 
-
+https://github.com/Mecro-yair/Pagina-de-una-calculadora-matematica/archive/refs/heads/main.zip
 
 Instalación:
 Haz clic en el link de arriba
